@@ -1,0 +1,12 @@
+<resources>
+    <!--
+        Theme.MileageTracker
+
+        Tema base del sistema (fuera de Compose). Compose luego aplica su
+        propio tema en Theme.kt, pero Android necesita este tema "padre"
+        definido en XML para la Activity antes de que Compose tome control.
+
+    -->
+    <style name="Theme.MileageTracker" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
+

@@ -1,0 +1,4 @@
+<resources>
+    <!-- Nombre de la app que aparece bajo el ícono en el celular -->
+    <string name="app_name">Mileage Tracker</string>
+</resources>
