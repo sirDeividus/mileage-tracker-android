@@ -219,6 +219,22 @@ fun HomeScreen() {
                             onCustomNameChange = { viewModel.updateCustomPlatformName(it) },
                             modifier = Modifier.fillMaxWidth()
                         )
+
+                        // NUEVO v2.3: campo opcional de peajes. El IRS permite
+                        // deducirlos por separado de la deducción por millaje.
+                        Spacer(modifier = Modifier.height(14.dp))
+                        OutlinedTextField(
+                            value = uiState.tollAmountText,
+                            onValueChange = { viewModel.updateTollAmount(it) },
+                            label = { Text(strings.tollLabel) },
+                            placeholder = { Text(strings.tollHint) },
+                            leadingIcon = { Text("$", fontSize = 16.sp, color = colors.textSecondary) },
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
+                            ),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(0.9f)
+                        )
                     }
                 }
             }

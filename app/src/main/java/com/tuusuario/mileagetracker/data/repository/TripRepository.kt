@@ -24,6 +24,11 @@ class TripRepository(private val dao: TripDao) {
         dao.insertTrip(trip)
     }
 
+    // NUEVO v2.3: usado por la función de "Importar respaldo".
+    suspend fun saveAll(trips: List<TripEntity>) {
+        dao.insertAll(trips)
+    }
+
     suspend fun deleteTrip(trip: TripEntity) {
         dao.deleteTrip(trip)
     }

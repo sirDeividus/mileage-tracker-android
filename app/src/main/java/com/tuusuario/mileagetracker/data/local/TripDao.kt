@@ -25,6 +25,11 @@ interface TripDao {
     @Insert
     suspend fun insertTrip(trip: TripEntity)
 
+    // NUEVO v2.3: inserta varios viajes de una sola vez — se usa al
+    // importar un archivo de respaldo (ver BackupManager.kt).
+    @Insert
+    suspend fun insertAll(trips: List<TripEntity>)
+
     @Delete
     suspend fun deleteTrip(trip: TripEntity)
 

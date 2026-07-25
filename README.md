@@ -8,6 +8,11 @@ App **100% nativa de Android**, escrita en **Kotlin + Jetpack Compose**, que ras
 
 ## 🆕 Changelog
 
+### v2.3
+- **Registro de peajes**: al finalizar un viaje puedes anotar cuánto pagaste en peajes (opcional). El IRS permite deducir peajes y estacionamiento de negocio **por separado** de la deducción estándar por millaje — el Resumen fiscal ahora muestra la deducción combinada (millaje + peajes) y el desglose de cada una.
+- **Respaldo de datos**: en Ajustes puedes **Exportar** un archivo de respaldo (a Google Drive, Descargas, correo, etc.) e **Importar** ese archivo si reinstalas la app o cambias de celular, sin perder tu historial. Además, se activó el "Auto Backup" de Android como capa adicional automática.
+- Nueva migración de base de datos (`MIGRATION_2_3`) para agregar la columna de peajes sin perder viajes ya guardados.
+
 ### v2.2
 - **Estimación válida para los 50 estados**: ya no está fija a North Carolina. En Ajustes eliges tu estado y la pantalla de Resumen muestra la nota correcta (la tasa del IRS es federal, así que es la misma para todos; solo cambiaba el texto informativo).
 - **Recordatorio diario**: un modal recuerda activar "Start Work" antes de salir a trabajar y "Stop Work" al llegar a casa, para no perder millas. Aparece como máximo una vez al día.

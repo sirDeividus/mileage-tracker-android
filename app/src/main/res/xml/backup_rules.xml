@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    backup_rules.xml
+    =======================================================================
+    Le dice al sistema de "Auto Backup" de Android (que guarda una copia
+    de los datos de la app en la cuenta de Google del usuario) QUÉ
+    incluir. Incluimos la base de datos de Room (donde viven los viajes)
+    y las preferencias (idioma, tema, estado elegido).
+
+    IMPORTANTE: esto es una ayuda automática, pero Android decide CUÁNDO
+    hacer el backup (normalmente necesita wifi + batería cargando + el
+    teléfono inactivo, y no es instantáneo). Por eso también agregamos
+    una función de Exportar/Importar manual en Ajustes, que es 100%
+    bajo control del usuario y no depende de que el backup automático
+    ya se haya ejecutado antes de desinstalar.
+    =======================================================================
+-->
+<full-backup-content>
+    <include domain="database" path="mileage_tracker_db" />
+    <include domain="sharedpref" path="mileage_tracker_prefs.xml" />
+</full-backup-content>

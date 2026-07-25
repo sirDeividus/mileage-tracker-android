@@ -75,13 +75,27 @@ fun SummaryScreen() {
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        "$${"%.2f".format(uiState.totalDeduction)}",
+                        // NUEVO v2.3: la tarjeta principal ahora suma millaje + peajes,
+                        // que es la deducción total real que el usuario puede reclamar.
+                        "$${"%.2f".format(uiState.combinedDeduction)}",
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Black,
                         color = TextOnPrimary
                     )
-                    Text(strings.estimatedDeductionLabel, fontSize = 13.sp, color = TextOnPrimary)
+                    Text(strings.combinedDeductionLabel, fontSize = 13.sp, color = TextOnPrimary)
                 }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // NUEVO v2.3: desglose de millaje vs. peajes, y explicación de por qué se suman aparte
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                SmallStat("$${"%.2f".format(uiState.totalDeduction)}", strings.estimatedDeductionLabel, Modifier.weight(1f))
+                SmallStat("$${"%.2f".format(uiState.totalTolls)}", strings.totalTollsLabel, Modifier.weight(1f))
+            }
+            if (uiState.totalTolls > 0.0) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(strings.tollExplanation, fontSize = 11.sp, color = colors.textMuted, lineHeight = 15.sp)
             }
 
             Spacer(modifier = Modifier.height(10.dp))

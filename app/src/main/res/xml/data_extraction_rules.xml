@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    data_extraction_rules.xml
+    =======================================================================
+    Android 12 introdujo un formato nuevo de reglas de backup/transferencia
+    de dispositivo (reemplaza a backup_rules.xml en versiones nuevas, pero
+    mantenemos AMBOS archivos porque backup_rules.xml todavía se usa en
+    Android 11 y anteriores). Mismo contenido: incluir la base de datos y
+    las preferencias.
+    =======================================================================
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="database" path="mileage_tracker_db" />
+        <include domain="sharedpref" path="mileage_tracker_prefs.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="database" path="mileage_tracker_db" />
+        <include domain="sharedpref" path="mileage_tracker_prefs.xml" />
+    </device-transfer>
+</data-extraction-rules>

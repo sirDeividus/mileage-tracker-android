@@ -97,6 +97,13 @@ fun TripCard(
                     fontSize = 11.sp,
                     color = colors.textMuted
                 )
+                if (trip.tollAmount > 0.0) {
+                    Text(
+                        "${strings.totalTollsLabel}: \$${"%.2f".format(trip.tollAmount)}",
+                        fontSize = 11.sp,
+                        color = colors.textMuted
+                    )
+                }
             }
 
             Column(horizontalAlignment = Alignment.End) {

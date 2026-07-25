@@ -1,5 +1,7 @@
 package com.tuusuario.mileagetracker.ui.settings
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,6 +20,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tuusuario.mileagetracker.data.local.AppLanguage
 import com.tuusuario.mileagetracker.data.local.ThemeMode
 import com.tuusuario.mileagetracker.data.local.UserPreferences
@@ -47,9 +50,36 @@ fun SettingsScreen(
     val strings = LocalAppStrings.current
     val colors = LocalAppColors.current
     val prefs = remember { UserPreferences(context) }
+    val settingsViewModel: SettingsViewModel = viewModel()
 
     var selectedStateCode by remember { mutableStateOf(prefs.stateCode) }
     var showStatePicker by remember { mutableStateOf(false) }
+    var backupMessage by remember { mutableStateOf<String?>(null) }
+
+    // NUEVO v2.3: selector nativo de Android para ELEGIR DÓNDE guardar el
+    // archivo de respaldo (Google Drive, Descargas, etc.). No necesitamos
+    // pedir ningún permiso de almacenamiento: el sistema operativo
+    // controla el acceso al archivo elegido.
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) {
+            settingsViewModel.exportBackup(uri) { success ->
+                backupMessage = if (success) strings.backupExportSuccess else strings.backupImportError
+            }
+        }
+    }
+
+    // NUEVO v2.3: selector nativo para ELEGIR un archivo de respaldo a importar.
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            settingsViewModel.importBackup(uri) { success ->
+                backupMessage = if (success) strings.backupImportSuccess else strings.backupImportError
+            }
+        }
+    }
 
     Surface(modifier = Modifier.fillMaxSize(), color = colors.background) {
         Column(
@@ -104,6 +134,37 @@ fun SettingsScreen(
             ) {
                 Text(selectedStateName, fontSize = 14.sp, color = colors.textPrimary, fontWeight = FontWeight.Medium)
                 Text("›", fontSize = 18.sp, color = colors.textMuted)
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ---- NUEVO v2.3: Respaldo de datos ----
+            SettingsSectionLabel(strings.settingsBackupSection)
+            Text(strings.backupExplanation, fontSize = 12.sp, color = colors.textSecondary, lineHeight = 17.sp)
+            Spacer(modifier = Modifier.height(10.dp))
+
+            OutlinedButton(
+                onClick = {
+                    val fileName = "mileage_tracker_backup_${System.currentTimeMillis()}.json"
+                    exportLauncher.launch(fileName)
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(strings.backupExportButton, fontSize = 13.sp)
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            OutlinedButton(
+                onClick = { importLauncher.launch(arrayOf("application/json")) },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(strings.backupImportButton, fontSize = 13.sp)
+            }
+
+            backupMessage?.let {
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(it, fontSize = 12.5.sp, color = PrimaryGreen, fontWeight = FontWeight.SemiBold)
             }
         }
     }

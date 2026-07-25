@@ -38,7 +38,17 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
     }
 }
 
-@Database(entities = [TripEntity::class], version = 2, exportSchema = false)
+// NUEVO v2.3: agrega la columna de peajes (tollAmount), sin tocar los
+// viajes ya guardados. Mismo patrón que MIGRATION_1_2.
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "ALTER TABLE trips ADD COLUMN tollAmount REAL NOT NULL DEFAULT 0.0"
+        )
+    }
+}
+
+@Database(entities = [TripEntity::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun tripDao(): TripDao
@@ -54,11 +64,11 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "mileage_tracker_db"
                 )
-                    // Registramos TODAS las migraciones conocidas. Si en el
-                    // futuro agregas la v3, se agrega aquí MIGRATION_2_3 sin
-                    // quitar esta línea, para que usuarios que vengan desde
-                    // muy atrás (v1 -> v3) sigan sin perder datos.
-                    .addMigrations(MIGRATION_1_2)
+                    // Registramos TODAS las migraciones conocidas, en orden.
+                    // Así un usuario que viene desde muy atrás (v1 -> v3)
+                    // pasa automáticamente por MIGRATION_1_2 y luego
+                    // MIGRATION_2_3, sin perder ni un viaje.
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build()
                 INSTANCE = instance
                 instance

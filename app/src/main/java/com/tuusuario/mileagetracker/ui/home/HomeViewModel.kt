@@ -34,8 +34,10 @@ data class HomeUiState(
     val currentMiles: Double = 0.0,
     val selectedPlatformId: String = "",
     val customPlatformName: String = "",
+    val tollAmountText: String = "",   // NUEVO v2.3: peajes del viaje en curso
     val monthMiles: Double = 0.0,
     val monthDeduction: Double = 0.0,
+    val monthTolls: Double = 0.0,      // NUEVO v2.3
     val errorMessage: String? = null,
 )
 
@@ -94,6 +96,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = _uiState.value.copy(customPlatformName = name)
     }
 
+    /** NUEVO v2.3: actualiza el monto de peajes que el usuario va escribiendo. */
+    fun updateTollAmount(text: String) {
+        _uiState.value = _uiState.value.copy(tollAmountText = text)
+    }
+
     /** Se llama cuando el usuario presiona "Start Work". */
     fun startTracking() {
         _uiState.value = _uiState.value.copy(errorMessage = null)
@@ -131,6 +138,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
             val platformValue = if (platformId == "other") customName.trim() else platformId
+            val tollAmount = _uiState.value.tollAmountText.toDoubleOrNull() ?: 0.0
 
             val trip = TripEntity(
                 startTimeMillis = startTime,
@@ -138,11 +146,16 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 miles = miles,
                 note = "",
                 routeJson = routeToJson(cleanRoute),
-                platform = platformValue
+                platform = platformValue,
+                tollAmount = tollAmount,
             )
             repository.saveTrip(trip)
             TrackingSessionState.reset()
-            _uiState.value = _uiState.value.copy(selectedPlatformId = "", customPlatformName = "")
+            _uiState.value = _uiState.value.copy(
+                selectedPlatformId = "",
+                customPlatformName = "",
+                tollAmountText = "",
+            )
             loadMonthSummary()
             onSaved(miles)
         }
@@ -161,7 +174,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             val totalDeduction = thisMonthTrips.sumOf {
                 calculateDeduction(it.miles, java.util.Date(it.startTimeMillis)).deduction
             }
-            _uiState.value = _uiState.value.copy(monthMiles = totalMiles, monthDeduction = totalDeduction)
+            val totalTolls = thisMonthTrips.sumOf { it.tollAmount }
+            _uiState.value = _uiState.value.copy(monthMiles = totalMiles, monthDeduction = totalDeduction, monthTolls = totalTolls)
         }
     }
 

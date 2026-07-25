@@ -22,7 +22,9 @@ enum class Period { MONTH, QUARTER, YEAR }
 data class SummaryUiState(
     val period: Period = Period.MONTH,
     val totalMiles: Double = 0.0,
-    val totalDeduction: Double = 0.0,
+    val totalDeduction: Double = 0.0,      // solo la deducción por millaje
+    val totalTolls: Double = 0.0,          // NUEVO v2.3
+    val combinedDeduction: Double = 0.0,   // NUEVO v2.3: millaje + peajes
     val tripCount: Int = 0,
     val selectedState: UsState? = null, // NUEVO: reemplaza el "North Carolina" fijo
 )
@@ -78,10 +80,15 @@ class SummaryViewModel(application: Application) : AndroidViewModel(application)
         val filtered = allTripsCache.filter { isInPeriod(it.startTimeMillis, _uiState.value.period) }
         val totalMiles = filtered.sumOf { it.miles }
         val totalDeduction = filtered.sumOf { calculateDeduction(it.miles, Date(it.startTimeMillis)).deduction }
+        // NUEVO v2.3: el IRS permite deducir peajes de negocio POR SEPARADO
+        // de la deducción por millaje, así que se suman al final.
+        val totalTolls = filtered.sumOf { it.tollAmount }
 
         _uiState.value = _uiState.value.copy(
             totalMiles = totalMiles,
             totalDeduction = totalDeduction,
+            totalTolls = totalTolls,
+            combinedDeduction = totalDeduction + totalTolls,
             tripCount = filtered.size
         )
     }

@@ -35,6 +35,8 @@ data class AppStrings(
     val estimatedDeduction: String,
     val platformQuestion: String,
     val customPlatformPlaceholder: String,
+    val tollLabel: String,
+    val tollHint: String,
     val disclaimerHome: String,
 
     // Tip modal
@@ -63,6 +65,9 @@ data class AppStrings(
     val estimatedDeductionLabel: String,
     val totalMilesLabel: String,
     val tripsLabel: String,
+    val totalTollsLabel: String,
+    val combinedDeductionLabel: String,
+    val tollExplanation: String,
     val irsRatesUsed: String,
     val aboutYourState: String,
     val chooseYourState: String,
@@ -77,6 +82,13 @@ data class AppStrings(
     val themeLight: String,
     val themeDark: String,
     val themeAuto: String,
+    val settingsBackupSection: String,
+    val backupExportButton: String,
+    val backupImportButton: String,
+    val backupExplanation: String,
+    val backupExportSuccess: String,
+    val backupImportSuccess: String,
+    val backupImportError: String,
 
     // Pestañas de navegación
     val tabHome: String,
@@ -118,6 +130,8 @@ private val SPANISH = AppStrings(
     estimatedDeduction = "Deducción estimada",
     platformQuestion = "¿Para qué plataforma trabajaste?",
     customPlatformPlaceholder = "Escribe el nombre de la plataforma",
+    tollLabel = "Peajes de este viaje",
+    tollHint = "Opcional, ej. 4.50",
     disclaimerHome = "Esta app calcula una ESTIMACIÓN basada en la tasa estándar de millaje del IRS. " +
         "No sustituye asesoría fiscal profesional. Consulta a tu contador para tu declaración.",
 
@@ -143,9 +157,13 @@ private val SPANISH = AppStrings(
     periodMonth = "Este mes",
     periodQuarter = "Trimestre",
     periodYear = "Este año",
-    estimatedDeductionLabel = "Deducción estimada",
+    estimatedDeductionLabel = "Deducción por millaje",
     totalMilesLabel = "Millas totales",
     tripsLabel = "Viajes",
+    totalTollsLabel = "Peajes",
+    combinedDeductionLabel = "Deducción total estimada",
+    tollExplanation = "El IRS permite deducir peajes y estacionamiento de negocio POR SEPARADO, " +
+        "además de la deducción estándar por millaje — no están incluidos en la tasa por milla.",
     irsRatesUsed = "Tasas del IRS usadas",
     aboutYourState = "Sobre tu estado",
     chooseYourState = "Elige tu estado",
@@ -160,6 +178,15 @@ private val SPANISH = AppStrings(
     themeLight = "Claro",
     themeDark = "Oscuro",
     themeAuto = "Automático",
+    settingsBackupSection = "Respaldo de datos",
+    backupExportButton = "Exportar respaldo (guardar archivo)",
+    backupImportButton = "Importar respaldo (restaurar archivo)",
+    backupExplanation = "Guarda un archivo con todos tus viajes. Si desinstalas la app o cambias de " +
+        "celular, usa \"Importar respaldo\" para recuperarlos. Recomendado: guarda el archivo en " +
+        "Google Drive o mándatelo por correo.",
+    backupExportSuccess = "Respaldo guardado correctamente",
+    backupImportSuccess = "Datos restaurados correctamente",
+    backupImportError = "No se pudo leer el archivo de respaldo",
 
     tabHome = "Inicio",
     tabHistory = "Historial",
@@ -184,6 +211,8 @@ private val ENGLISH = AppStrings(
     estimatedDeduction = "Estimated deduction",
     platformQuestion = "Which platform did you work for?",
     customPlatformPlaceholder = "Type the platform name",
+    tollLabel = "Tolls for this trip",
+    tollHint = "Optional, e.g. 4.50",
     disclaimerHome = "This app calculates an ESTIMATE based on the IRS standard mileage rate. " +
         "It does not replace professional tax advice. Consult your accountant for your filing.",
 
@@ -209,9 +238,13 @@ private val ENGLISH = AppStrings(
     periodMonth = "This month",
     periodQuarter = "Quarter",
     periodYear = "This year",
-    estimatedDeductionLabel = "Estimated deduction",
+    estimatedDeductionLabel = "Mileage deduction",
     totalMilesLabel = "Total miles",
     tripsLabel = "Trips",
+    totalTollsLabel = "Tolls",
+    combinedDeductionLabel = "Total estimated deduction",
+    tollExplanation = "The IRS allows deducting business tolls and parking SEPARATELY, in addition " +
+        "to the standard mileage deduction — they are not included in the per-mile rate.",
     irsRatesUsed = "IRS rates used",
     aboutYourState = "About your state",
     chooseYourState = "Choose your state",
@@ -226,6 +259,15 @@ private val ENGLISH = AppStrings(
     themeLight = "Light",
     themeDark = "Dark",
     themeAuto = "Automatic",
+    settingsBackupSection = "Data backup",
+    backupExportButton = "Export backup (save file)",
+    backupImportButton = "Import backup (restore file)",
+    backupExplanation = "Save a file with all your trips. If you uninstall the app or switch phones, " +
+        "use \"Import backup\" to get them back. Recommended: save the file to Google Drive or email " +
+        "it to yourself.",
+    backupExportSuccess = "Backup saved successfully",
+    backupImportSuccess = "Data restored successfully",
+    backupImportError = "Couldn't read the backup file",
 
     tabHome = "Home",
     tabHistory = "History",

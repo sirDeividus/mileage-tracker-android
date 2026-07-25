@@ -30,7 +30,7 @@ import com.tuusuario.mileagetracker.util.LocalAppStrings
  *   3. Pega esa URL abajo, reemplazando el valor de ejemplo.
  * -----------------------------------------------------------------------
  */
-private const val PAYPAL_DONATE_URL = "https://www.paypal.com/donate/?business=LWSJ5SSU42JPE&no_recurring=0&item_name=%C2%A1Gracias+por+tu+donaci%C3%B3n%21+%F0%9F%92%9A%E2%80%94+cualquier+aporte+ayuda+a+seguir+mejor%C3%A1ndola.&currency_code=USD" // <-- reemplaza esto
+private const val PAYPAL_DONATE_URL = "https://paypal.me/TUUSUARIO" // <-- reemplaza esto
 
 @Composable
 fun DonateButton(modifier: Modifier = Modifier) {
