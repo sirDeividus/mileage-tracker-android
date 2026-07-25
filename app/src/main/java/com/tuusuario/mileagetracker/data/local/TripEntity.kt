@@ -12,6 +12,10 @@ import androidx.room.PrimaryKey
  *
  * Aprendizaje clave: en Room, @Entity marca la clase como tabla,
  * @PrimaryKey marca el identificador único de cada fila.
+ *
+ * CAMBIO EN v2.0: se agregó el campo "platform" (DoorDash, Uber, etc.).
+ * Ver AppDatabase.kt -> MIGRATION_1_2 para entender cómo se agregó esta
+ * columna SIN borrar los viajes que el usuario ya tenía guardados.
  * -----------------------------------------------------------------------
  */
 @Entity(tableName = "trips")
@@ -22,6 +26,10 @@ data class TripEntity(
     val startTimeMillis: Long,   // fecha/hora de inicio del viaje (timestamp)
     val endTimeMillis: Long,     // fecha/hora de fin del viaje
     val miles: Double,           // distancia total recorrida
-    val note: String,            // motivo del viaje (ej. "Visita a cliente")
-    val routeJson: String        // ruta GPS completa, guardada como texto JSON
+    val note: String,            // nota adicional opcional (v1.0, se mantiene)
+    val routeJson: String,       // ruta GPS completa, guardada como texto JSON
+
+    // NUEVO v2.0: id de la plataforma elegida (ej. "doordash", "uber_eats",
+    // o el nombre libre que el usuario escribió si eligió "Otra").
+    val platform: String = ""
 )

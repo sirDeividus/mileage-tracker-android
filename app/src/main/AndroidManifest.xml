@@ -1,17 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     AndroidManifest.xml
-
+    =======================================================================
     Es el "documento de identidad" de la app: declara qué permisos necesita
     (aquí pedimos acceso a la ubicación GPS), cuál es la pantalla principal
     (MainActivity) y metadatos generales como el ícono y el nombre.
-
+    =======================================================================
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- Permiso para usar el GPS mientras la app está abierta en primer plano -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- NUEVO v2.0: permite que el GPS siga funcionando con la app minimizada
+         o la pantalla apagada. En Android 10+ este permiso se pide en un
+         SEGUNDO paso, después de que el usuario ya aceptó el de primer plano. -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <!-- NUEVO v2.0: requeridos para correr un Foreground Service de ubicación
+         (obligatorio desde Android 14 declarar el tipo específico). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+
+    <!-- NUEVO v2.0: en Android 13+ hay que pedir permiso explícito para
+         mostrar la notificación persistente del rastreo activo. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- NUEVO v2.0: para abrir el navegador con el link de donación de PayPal -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
@@ -30,6 +47,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- NUEVO v2.0: servicio que mantiene el GPS activo en segundo plano,
+             con una notificación fija mientras el viaje está en curso. -->
+        <service
+            android:name=".location.TrackingService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
 
     </application>
 

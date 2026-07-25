@@ -1,10 +1,39 @@
 # 🚗 Mileage Tracker (Android nativo) — Rastreador de Millas para Deducción de Impuestos (NC / IRS)
 
-App **100% nativa de Android**, escrita en **Kotlin + Jetpack Compose**, que rastrea por GPS las millas recorridas durante viajes de trabajo y calcula una **estimación de deducción de impuestos** usando la tasa estándar de millaje del IRS, con notas específicas para **North Carolina (NC)**.
+App **100% nativa de Android**, escrita en **Kotlin + Jetpack Compose**, que rastrea por GPS las millas recorridas durante viajes de trabajo y calcula una **estimación de deducción de impuestos** usando la tasa estándar de millaje del IRS — válida para usuarios de **cualquiera de los 50 estados de EE.UU.**
 
-> ⚠️ **Versión 1.0 (primera versión / MVP).** Proyecto personal de portafolio — no es un producto financiero certificado. Ver [Aviso legal](#-aviso-legal).
+> 🆕 **Versión 2.0.** Ver [changelog completo](#-changelog) más abajo, o el PDF `MEJORAS_V2.pdf` incluido en este repositorio.
 
 ---
+
+## 🆕 Changelog
+
+### v2.2
+- **Estimación válida para los 50 estados**: ya no está fija a North Carolina. En Ajustes eliges tu estado y la pantalla de Resumen muestra la nota correcta (la tasa del IRS es federal, así que es la misma para todos; solo cambiaba el texto informativo).
+- **Recordatorio diario**: un modal recuerda activar "Start Work" antes de salir a trabajar y "Stop Work" al llegar a casa, para no perder millas. Aparece como máximo una vez al día.
+- **Saludo + frase motivadora** en la parte superior de Inicio, según la hora del día.
+- **Idioma español/inglés** seleccionable en Ajustes — la mayoría de las pantallas usan el sistema de textos traducibles (`Strings.kt`).
+- **Tema claro / oscuro / automático** seleccionable en Ajustes.
+- Nueva pestaña "Ajustes" (idioma, tema, estado).
+
+### v2.0
+- Rastreo en segundo plano real (Foreground Service).
+- Selector de plataforma de trabajo (DoorDash, Uber, etc.).
+- Botón de donación por PayPal.
+- Actualización sin pérdida de datos (migración de base de datos).
+
+### v1.0
+- Primera versión: rastreo GPS en primer plano, historial, resumen fiscal.
+
+---
+
+## ⚠️ Nota sobre los logos de las plataformas
+
+Los nombres DoorDash, Uber, Amazon Flex, etc. se muestran con un **color distintivo y un ícono genérico**, no con los logos oficiales de cada marca — reproducir esos logos sin licencia no está permitido, ni siquiera en un proyecto personal público. Si quieres los logos reales, tendrías que obtener el permiso/licencia de cada marca o usar sus kits de prensa oficiales bajo sus términos de uso.
+
+---
+
+
 
 ## 📱 Funcionalidades
 
@@ -100,9 +129,8 @@ Fuente oficial: [irs.gov/tax-professionals/standard-mileage-rates](https://www.i
 
 ## 🗺️ Roadmap (próximas versiones)
 
-- [ ] Rastreo en segundo plano con un `Foreground Service` (para que siga funcionando con la pantalla apagada)
+- [ ] **Mapa visual offline** (v2.1): el rastreo de millas YA funciona sin internet (usa GPS satelital, no datos móviles), pero mostrar un mapa visual de la ruta recorrida requiere integrar un SDK de mapas con soporte de tiles offline (ej. OSMDroid, que es gratuito y no requiere facturación, a diferencia de Google Maps Platform). Quedó fuera de esta versión para no entregar una integración a medias sin las credenciales que tú deberías gestionar.
 - [ ] Exportar historial a PDF / CSV
-- [ ] Clasificación de viajes (negocio / personal / médico / caritativo)
 - [ ] Modo oscuro
 - [ ] Publicar en Google Play
 

@@ -26,9 +26,10 @@ fun StatsCard(
     modifier: Modifier = Modifier,
     accentColor: Color = PrimaryGreen,
 ) {
+    val colors = LocalAppColors.current
     Card(
-        modifier = modifier.border(1.dp, BorderColor, MaterialTheme.shapes.large),
-        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        modifier = modifier.border(1.dp, colors.border, MaterialTheme.shapes.large),
+        colors = CardDefaults.cardColors(containerColor = colors.surface),
         shape = MaterialTheme.shapes.large,
     ) {
         Column(
@@ -39,7 +40,7 @@ fun StatsCard(
         ) {
             Text(text = value, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = accentColor)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = label, fontSize = 12.sp, color = TextSecondary)
+            Text(text = label, fontSize = 12.sp, color = colors.textSecondary)
         }
     }
 }

@@ -15,10 +15,11 @@ import java.util.Locale
  *
  * Fuente oficial: irs.gov/tax-professionals/standard-mileage-rates
  *
- * Nota sobre North Carolina (NC): el estado no tiene una tasa de millaje
- * propia, usa como base la tasa estándar del IRS. Lo que cambia es la
- * forma de declarar (Schedule C federal + Formulario D-400 de NC).
- * Esta app NO sustituye asesoría fiscal profesional.
+ * ESTA TASA ES FEDERAL: es exactamente la misma para cualquier usuario,
+ * sin importar en qué estado de EE.UU. viva (antes esta app solo
+ * mencionaba North Carolina; ver UsStates.kt para la nota específica de
+ * cada uno de los 50 estados + DC). Esta app NO sustituye asesoría
+ * fiscal profesional.
  * -----------------------------------------------------------------------
  */
 
@@ -47,11 +48,4 @@ fun calculateDeduction(miles: Double, date: Date): DeductionResult {
     val rate = getRateForDate(date)
     val deduction = Math.round(miles * rate * 100) / 100.0
     return DeductionResult(miles, rate, deduction)
-}
-
-object NcTaxInfo {
-    const val NOTES =
-        "NC no tiene una tasa de millaje propia; usa la tasa estándar del IRS como base " +
-        "para la deducción. Consulta siempre a un profesional de impuestos o el sitio " +
-        "oficial ncdor.gov para tu caso particular."
 }

@@ -17,26 +17,29 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tuusuario.mileagetracker.ui.components.TripCard
-import com.tuusuario.mileagetracker.ui.theme.*
+import com.tuusuario.mileagetracker.ui.theme.LocalAppColors
+import com.tuusuario.mileagetracker.util.LocalAppStrings
 
 /**
- * HistoryScreen.kt
+ * HistoryScreen.kt  (ACTUALIZADO)
  * -----------------------------------------------------------------------
- * Muestra la lista completa de viajes usando LazyColumn (el equivalente
- * en Compose de FlatList en React Native: solo dibuja en memoria los
- * elementos visibles en pantalla, ideal para listas largas).
+ * Muestra la lista completa de viajes usando LazyColumn. Ahora usa
+ * LocalAppStrings (idioma elegido en Ajustes) y LocalAppColors (tema
+ * claro/oscuro/automático) en vez de textos y colores fijos.
  * -----------------------------------------------------------------------
  */
 @Composable
 fun HistoryScreen() {
     val viewModel: HistoryViewModel = viewModel()
     val trips by viewModel.trips.collectAsState()
+    val strings = LocalAppStrings.current
+    val colors = LocalAppColors.current
 
-    Surface(modifier = Modifier.fillMaxSize(), color = BackgroundLight) {
+    Surface(modifier = Modifier.fillMaxSize(), color = colors.background) {
         Column(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.padding(20.dp, 16.dp, 20.dp, 8.dp)) {
-                Text("Historial de viajes", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = TextPrimary)
-                Text("${trips.size} viaje(s) registrados", fontSize = 13.sp, color = TextSecondary)
+                Text(strings.historyTitle, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = colors.textPrimary)
+                Text("${trips.size} ${strings.tripsRegistered}", fontSize = 13.sp, color = colors.textSecondary)
             }
 
             if (trips.isEmpty()) {
@@ -47,12 +50,12 @@ fun HistoryScreen() {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Icon(Icons.Default.Place, contentDescription = null, tint = TextMuted, modifier = Modifier.size(48.dp))
+                    Icon(Icons.Default.Place, contentDescription = null, tint = colors.textMuted, modifier = Modifier.size(48.dp))
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        "Aún no tienes viajes guardados.\nPresiona \"Start Work\" para comenzar a rastrear.",
+                        strings.noTripsYet,
                         fontSize = 13.sp,
-                        color = TextMuted,
+                        color = colors.textMuted,
                         textAlign = TextAlign.Center
                     )
                 }

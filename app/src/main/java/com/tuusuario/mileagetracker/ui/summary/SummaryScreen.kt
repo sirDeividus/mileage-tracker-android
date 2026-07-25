@@ -5,10 +5,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -18,45 +17,55 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.tuusuario.mileagetracker.ui.theme.*
+import com.tuusuario.mileagetracker.ui.components.DonateButton
+import com.tuusuario.mileagetracker.ui.theme.LocalAppColors
+import com.tuusuario.mileagetracker.ui.theme.PrimaryGreen
+import com.tuusuario.mileagetracker.ui.theme.TextOnPrimary
 import com.tuusuario.mileagetracker.util.BUSINESS_MILEAGE_RATES
-import com.tuusuario.mileagetracker.util.NcTaxInfo
+import com.tuusuario.mileagetracker.util.LocalAppStrings
+import com.tuusuario.mileagetracker.util.stateTaxNotes
 
 /**
- * SummaryScreen.kt
+ * SummaryScreen.kt  (ACTUALIZADO)
  * -----------------------------------------------------------------------
- * Pantalla "Resumen fiscal": el usuario elige un período con chips
- * (Este mes / Trimestre / Este año) y ve la deducción estimada, la
- * tabla de tasas del IRS usadas, y notas sobre North Carolina.
+ * Pantalla "Resumen fiscal". CAMBIO IMPORTANTE: ya no muestra una nota
+ * fija de "North Carolina" — ahora usa el estado que el usuario eligió
+ * en Ajustes (o invita a elegirlo si aún no lo hizo), válido para
+ * cualquiera de los 50 estados de EE.UU. También usa LocalAppStrings
+ * para mostrar el texto en el idioma elegido, y LocalAppColors para
+ * respetar el tema claro/oscuro.
  * -----------------------------------------------------------------------
  */
 @Composable
 fun SummaryScreen() {
     val viewModel: SummaryViewModel = viewModel()
     val uiState by viewModel.uiState.collectAsState()
+    val strings = LocalAppStrings.current
+    val colors = LocalAppColors.current
 
-    Surface(modifier = Modifier.fillMaxSize(), color = BackgroundLight) {
+    // Por si el usuario cambió su estado en Ajustes y vuelve a esta pantalla
+    LaunchedEffect(Unit) { viewModel.refreshSelectedState() }
+
+    Surface(modifier = Modifier.fillMaxSize(), color = colors.background) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
-            Text("Resumen fiscal (IRS)", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = TextPrimary)
-            Text("Estimación de deducción por millaje - North Carolina", fontSize = 13.sp, color = TextSecondary)
+            Text(strings.summaryTitle, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = colors.textPrimary)
+            Text(strings.summarySubtitle, fontSize = 13.sp, color = colors.textSecondary)
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // ---- Selector de período (chips) ----
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                PeriodChip("Este mes", uiState.period == Period.MONTH) { viewModel.setPeriod(Period.MONTH) }
-                PeriodChip("Trimestre", uiState.period == Period.QUARTER) { viewModel.setPeriod(Period.QUARTER) }
-                PeriodChip("Este año", uiState.period == Period.YEAR) { viewModel.setPeriod(Period.YEAR) }
+                PeriodChip(strings.periodMonth, uiState.period == Period.MONTH) { viewModel.setPeriod(Period.MONTH) }
+                PeriodChip(strings.periodQuarter, uiState.period == Period.QUARTER) { viewModel.setPeriod(Period.QUARTER) }
+                PeriodChip(strings.periodYear, uiState.period == Period.YEAR) { viewModel.setPeriod(Period.YEAR) }
             }
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // ---- Tarjeta grande de deducción total ----
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -71,50 +80,64 @@ fun SummaryScreen() {
                         fontWeight = FontWeight.Black,
                         color = TextOnPrimary
                     )
-                    Text("Deducción estimada", fontSize = 13.sp, color = TextOnPrimary)
+                    Text(strings.estimatedDeductionLabel, fontSize = 13.sp, color = TextOnPrimary)
                 }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SmallStat("%.1f".format(uiState.totalMiles), "Millas totales", Modifier.weight(1f))
-                SmallStat("${uiState.tripCount}", "Viajes", Modifier.weight(1f))
+                SmallStat("%.1f".format(uiState.totalMiles), strings.totalMilesLabel, Modifier.weight(1f))
+                SmallStat("${uiState.tripCount}", strings.tripsLabel, Modifier.weight(1f))
             }
 
             Spacer(modifier = Modifier.height(22.dp))
-            Text("Tasas del IRS usadas", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+            Text(strings.irsRatesUsed, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
             Spacer(modifier = Modifier.height(10.dp))
 
             BUSINESS_MILEAGE_RATES.forEach { range ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(SurfaceWhite, RoundedCornerShape(10.dp))
+                        .background(colors.surface, RoundedCornerShape(10.dp))
                         .padding(vertical = 10.dp, horizontal = 14.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("${range.from} → ${range.to}", fontSize = 12.sp, color = TextSecondary)
-                    Text("\$${"%.3f".format(range.rate)} / milla", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    Text("${range.from} → ${range.to}", fontSize = 12.sp, color = colors.textSecondary)
+                    Text("\$${"%.3f".format(range.rate)} / milla", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
                 }
                 Spacer(modifier = Modifier.height(6.dp))
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            Text("Sobre North Carolina", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+            Text(strings.aboutYourState, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
             Spacer(modifier = Modifier.height(8.dp))
-            Text(NcTaxInfo.NOTES, fontSize = 13.sp, color = TextSecondary, lineHeight = 20.sp)
+
+            val state = uiState.selectedState
+            if (state != null) {
+                Text(stateTaxNotes(state), fontSize = 13.sp, color = colors.textSecondary, lineHeight = 20.sp)
+            } else {
+                // El usuario aún no eligió su estado — lo invitamos a hacerlo en Ajustes
+                Text(
+                    "${strings.chooseYourState} → ${strings.settingsTitle}",
+                    fontSize = 13.sp,
+                    color = colors.textMuted,
+                    lineHeight = 20.sp
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                "Este resumen es solo una guía informativa. No constituye asesoría legal ni fiscal. " +
-                    "Verifica siempre con un profesional certificado (CPA) o con el IRS (irs.gov) y " +
-                    "NCDOR (ncdor.gov) antes de presentar tu declaración.",
+                strings.summaryDisclaimer,
                 fontSize = 11.sp,
-                color = TextMuted,
+                color = colors.textMuted,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            Spacer(modifier = Modifier.height(20.dp))
+            DonateButton()
+            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
@@ -134,13 +157,14 @@ private fun PeriodChip(label: String, selected: Boolean, onClick: () -> Unit) {
 
 @Composable
 private fun SmallStat(value: String, label: String, modifier: Modifier = Modifier) {
+    val colors = LocalAppColors.current
     Column(
         modifier = modifier
-            .background(SurfaceWhite, RoundedCornerShape(14.dp))
+            .background(colors.surface, RoundedCornerShape(14.dp))
             .padding(vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(value, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = TextPrimary)
-        Text(label, fontSize = 12.sp, color = TextSecondary)
+        Text(value, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = colors.textPrimary)
+        Text(label, fontSize = 12.sp, color = colors.textSecondary)
     }
 }

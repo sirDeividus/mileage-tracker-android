@@ -1,121 +1,148 @@
 package com.tuusuario.mileagetracker.ui.home
 
 import android.app.Application
+import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.tuusuario.mileagetracker.data.local.AppDatabase
 import com.tuusuario.mileagetracker.data.local.TripEntity
 import com.tuusuario.mileagetracker.data.repository.TripRepository
-import com.tuusuario.mileagetracker.location.LocationTracker
-import com.tuusuario.mileagetracker.util.GpsPoint
+import com.tuusuario.mileagetracker.location.TrackingService
+import com.tuusuario.mileagetracker.location.TrackingSessionState
+import com.tuusuario.mileagetracker.util.DeliveryPlatform
+import com.tuusuario.mileagetracker.util.calculateDeduction
 import com.tuusuario.mileagetracker.util.calculateTotalDistance
 import com.tuusuario.mileagetracker.util.filterGpsNoise
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * HomeScreenState.kt (dentro de HomeViewModel)
+ * HomeUiState.kt (dentro de HomeViewModel)
  * -----------------------------------------------------------------------
- * Representa TODO lo que la pantalla Home necesita mostrar en un momento
- * dado. En vez de tener 5 variables sueltas, agrupamos el estado en una
- * sola clase inmutable — un patrón muy común en Compose ("UI State").
+ * CAMBIO v2.0: se agregaron selectedPlatformId y customPlatformName para
+ * el nuevo selector de plataformas de trabajo.
  * -----------------------------------------------------------------------
  */
 data class HomeUiState(
     val isTracking: Boolean = false,
     val currentMiles: Double = 0.0,
-    val note: String = "",
+    val selectedPlatformId: String = "",
+    val customPlatformName: String = "",
     val monthMiles: Double = 0.0,
     val monthDeduction: Double = 0.0,
     val errorMessage: String? = null,
 )
 
 /**
- * HomeViewModel.kt
+ * HomeViewModel.kt  (REESCRITO en v2.0)
  * -----------------------------------------------------------------------
- * El "cerebro" de la pantalla Home. Aquí vive TODA la lógica: iniciar y
- * detener el GPS, guardar el viaje en la base de datos, calcular el
- * resumen del mes. La pantalla (HomeScreen.kt) solo dibuja lo que el
- * ViewModel le entrega — no toma decisiones por sí misma.
+ * CAMBIO CLAVE respecto a la v1.0: este ViewModel YA NO escucha el GPS
+ * directamente. Antes lo hacía con locationTracker.trackLocation(),
+ * pero eso se detenía cuando Android congelaba la app en segundo plano
+ * (el bug reportado: "no me toma las millas cuando el cel está
+ * inactivo").
  *
- * Extiende AndroidViewModel (en vez de ViewModel simple) porque
- * necesitamos el "Application context" para inicializar la base de
- * datos y el GPS.
+ * Ahora el ViewModel solo:
+ *   1. Le ordena a TrackingService que empiece/termine (con un Intent).
+ *   2. OBSERVA el progreso a través de TrackingSessionState, que el
+ *      Service actualiza desde segundo plano sin depender de que esta
+ *      pantalla esté visible.
+ *
+ * El GPS real vive en el Service, que Android mantiene vivo gracias a
+ * la notificación persistente (startForeground).
  * -----------------------------------------------------------------------
  */
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: TripRepository
-    private val locationTracker = LocationTracker(application)
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
-
-    private var routePoints = mutableListOf<GpsPoint>()
-    private var trackingJob: Job? = null
-    private var startTimeMillis: Long = 0
 
     init {
         val dao = AppDatabase.getInstance(application).tripDao()
         repository = TripRepository(dao)
         loadMonthSummary()
+
+        // Nos suscribimos al estado que publica el Service en segundo plano
+        // y lo reflejamos en nuestro propio uiState para que la pantalla
+        // se redibuje automáticamente.
+        viewModelScope.launch {
+            combine(
+                TrackingSessionState.isTracking,
+                TrackingSessionState.currentMiles
+            ) { tracking, miles -> tracking to miles }
+                .collect { (tracking, miles) ->
+                    _uiState.value = _uiState.value.copy(isTracking = tracking, currentMiles = miles)
+                }
+        }
     }
 
-    fun updateNote(newNote: String) {
-        _uiState.value = _uiState.value.copy(note = newNote)
+    fun selectPlatform(platform: DeliveryPlatform) {
+        TrackingSessionState.selectedPlatform = platform.id
+        _uiState.value = _uiState.value.copy(selectedPlatformId = platform.id)
+    }
+
+    fun updateCustomPlatformName(name: String) {
+        TrackingSessionState.customPlatformName = name
+        _uiState.value = _uiState.value.copy(customPlatformName = name)
     }
 
     /** Se llama cuando el usuario presiona "Start Work". */
     fun startTracking() {
-        routePoints = mutableListOf()
-        startTimeMillis = System.currentTimeMillis()
-        _uiState.value = _uiState.value.copy(isTracking = true, currentMiles = 0.0, errorMessage = null)
-
-        // viewModelScope: las corrutinas lanzadas aquí se cancelan
-        // automáticamente si el ViewModel se destruye (evita fugas de memoria).
-        trackingJob = viewModelScope.launch {
-            locationTracker.trackLocation().collect { point ->
-                routePoints.add(point)
-                val cleanRoute = filterGpsNoise(routePoints)
-                val miles = calculateTotalDistance(cleanRoute)
-                _uiState.value = _uiState.value.copy(currentMiles = miles)
-            }
+        _uiState.value = _uiState.value.copy(errorMessage = null)
+        val context = getApplication<Application>()
+        val intent = Intent(context, TrackingService::class.java).apply {
+            action = TrackingService.ACTION_START
         }
+        // startForegroundService es obligatorio a partir de Android 8 (Oreo)
+        // para servicios que van a mostrar una notificación inmediatamente.
+        context.startForegroundService(intent)
     }
 
     /** Se llama cuando el usuario presiona "Stop Work". Guarda el viaje. */
     fun stopTracking(onSaved: (Double) -> Unit) {
-        trackingJob?.cancel()
-        trackingJob = null
+        val context = getApplication<Application>()
+        val stopIntent = Intent(context, TrackingService::class.java).apply {
+            action = TrackingService.ACTION_STOP
+        }
+        context.startService(stopIntent)
 
-        val cleanRoute = filterGpsNoise(routePoints)
+        val route = TrackingSessionState.routePoints.value
+        val cleanRoute = filterGpsNoise(route)
         val miles = calculateTotalDistance(cleanRoute)
-
-        _uiState.value = _uiState.value.copy(isTracking = false)
+        val startTime = TrackingSessionState.startTimeMillis
+        val platformId = TrackingSessionState.selectedPlatform
+        val customName = TrackingSessionState.customPlatformName
 
         if (miles < 0.05) {
             _uiState.value = _uiState.value.copy(
                 errorMessage = "No se detectó suficiente distancia recorrida. El viaje no fue guardado."
             )
+            TrackingSessionState.reset()
             return
         }
 
         viewModelScope.launch {
+            val platformValue = if (platformId == "other") customName.trim() else platformId
+
             val trip = TripEntity(
-                startTimeMillis = startTimeMillis,
+                startTimeMillis = startTime,
                 endTimeMillis = System.currentTimeMillis(),
                 miles = miles,
-                note = _uiState.value.note.trim(),
-                routeJson = routeToJson(cleanRoute)
+                note = "",
+                routeJson = routeToJson(cleanRoute),
+                platform = platformValue
             )
             repository.saveTrip(trip)
-            _uiState.value = _uiState.value.copy(note = "")
+            TrackingSessionState.reset()
+            _uiState.value = _uiState.value.copy(selectedPlatformId = "", customPlatformName = "")
             loadMonthSummary()
             onSaved(miles)
         }
@@ -132,14 +159,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             }
             val totalMiles = thisMonthTrips.sumOf { it.miles }
             val totalDeduction = thisMonthTrips.sumOf {
-                com.tuusuario.mileagetracker.util.calculateDeduction(it.miles, java.util.Date(it.startTimeMillis)).deduction
+                calculateDeduction(it.miles, java.util.Date(it.startTimeMillis)).deduction
             }
             _uiState.value = _uiState.value.copy(monthMiles = totalMiles, monthDeduction = totalDeduction)
         }
     }
 
-    /** Convierte la ruta GPS a un texto JSON simple para guardarla en la base de datos. */
-    private fun routeToJson(route: List<GpsPoint>): String {
+    private fun routeToJson(route: List<com.tuusuario.mileagetracker.util.GpsPoint>): String {
         val array = JSONArray()
         route.forEach { point ->
             val obj = JSONObject()
