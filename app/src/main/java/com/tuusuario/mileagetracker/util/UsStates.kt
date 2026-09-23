@@ -24,6 +24,11 @@ data class UsState(
     val code: String,
     val displayName: String,
     val noStateIncomeTax: Boolean = false,
+    // NUEVO: nombre oficial en inglés — el GPS/Geocoder de Android devuelve
+    // el nombre del estado en inglés sin importar el idioma de la app, así
+    // que lo usamos para poder detectar el estado automáticamente (ver
+    // findStateByEnglishName más abajo).
+    val enName: String = displayName,
 )
 
 val US_STATES = listOf(
@@ -35,52 +40,63 @@ val US_STATES = listOf(
     UsState("CO", "Colorado"),
     UsState("CT", "Connecticut"),
     UsState("DE", "Delaware"),
-    UsState("DC", "Distrito de Columbia (DC)"),
+    UsState("DC", "Distrito de Columbia (DC)", enName = "District of Columbia"),
     UsState("FL", "Florida", noStateIncomeTax = true),
     UsState("GA", "Georgia"),
-    UsState("HI", "Hawái"),
+    UsState("HI", "Hawái", enName = "Hawaii"),
     UsState("ID", "Idaho"),
     UsState("IL", "Illinois"),
     UsState("IN", "Indiana"),
     UsState("IA", "Iowa"),
     UsState("KS", "Kansas"),
     UsState("KY", "Kentucky"),
-    UsState("LA", "Luisiana"),
+    UsState("LA", "Luisiana", enName = "Louisiana"),
     UsState("ME", "Maine"),
     UsState("MD", "Maryland"),
     UsState("MA", "Massachusetts"),
     UsState("MI", "Michigan"),
     UsState("MN", "Minnesota"),
-    UsState("MS", "Misisipi"),
-    UsState("MO", "Misuri"),
+    UsState("MS", "Misisipi", enName = "Mississippi"),
+    UsState("MO", "Misuri", enName = "Missouri"),
     UsState("MT", "Montana"),
     UsState("NE", "Nebraska"),
     UsState("NV", "Nevada", noStateIncomeTax = true),
     UsState("NH", "New Hampshire", noStateIncomeTax = true),
-    UsState("NJ", "Nueva Jersey"),
-    UsState("NM", "Nuevo México"),
-    UsState("NY", "Nueva York"),
-    UsState("NC", "Carolina del Norte"),
-    UsState("ND", "Dakota del Norte"),
+    UsState("NJ", "Nueva Jersey", enName = "New Jersey"),
+    UsState("NM", "Nuevo México", enName = "New Mexico"),
+    UsState("NY", "Nueva York", enName = "New York"),
+    UsState("NC", "Carolina del Norte", enName = "North Carolina"),
+    UsState("ND", "Dakota del Norte", enName = "North Dakota"),
     UsState("OH", "Ohio"),
     UsState("OK", "Oklahoma"),
-    UsState("OR", "Oregón"),
-    UsState("PA", "Pensilvania"),
+    UsState("OR", "Oregón", enName = "Oregon"),
+    UsState("PA", "Pensilvania", enName = "Pennsylvania"),
     UsState("RI", "Rhode Island"),
-    UsState("SC", "Carolina del Sur"),
-    UsState("SD", "Dakota del Sur", noStateIncomeTax = true),
+    UsState("SC", "Carolina del Sur", enName = "South Carolina"),
+    UsState("SD", "Dakota del Sur", noStateIncomeTax = true, enName = "South Dakota"),
     UsState("TN", "Tennessee", noStateIncomeTax = true),
     UsState("TX", "Texas", noStateIncomeTax = true),
     UsState("UT", "Utah"),
     UsState("VT", "Vermont"),
     UsState("VA", "Virginia"),
     UsState("WA", "Washington", noStateIncomeTax = true),
-    UsState("WV", "Virginia Occidental"),
+    UsState("WV", "Virginia Occidental", enName = "West Virginia"),
     UsState("WI", "Wisconsin"),
     UsState("WY", "Wyoming", noStateIncomeTax = true),
 )
 
 fun findStateByCode(code: String): UsState? = US_STATES.find { it.code == code }
+
+/**
+ * Busca un estado por su nombre en inglés, tal como lo devuelve el
+ * Geocoder de Android (adminArea) al detectar la ubicación por GPS.
+ * Ignora mayúsculas/minúsculas y espacios extra para tolerar pequeñas
+ * diferencias de formato.
+ */
+fun findStateByEnglishName(name: String): UsState? {
+    val normalized = name.trim().lowercase()
+    return US_STATES.find { it.enName.lowercase() == normalized }
+}
 
 /**
  * Genera la nota informativa para el estado elegido. La deducción en sí

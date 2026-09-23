@@ -8,6 +8,12 @@ App **100% nativa de Android**, escrita en **Kotlin + Jetpack Compose**, que ras
 
 ## 🆕 Changelog
 
+### v2.4
+- **Editar viajes**: en Historial, además de eliminar, ahora puedes tocar el lápiz para corregir un viaje ya guardado (fecha, millas, plataforma, peajes, nota).
+- **Agregar viaje manual**: botón "+" en Historial para registrar un viaje a mano cuando se te olvida presionar "Start Work" — así no pierdes esa deducción.
+- **Detección de estado por GPS**: en Ajustes, botón "Detectar mi estado por GPS" que usa tu ubicación actual para elegir automáticamente tu estado (en vez de buscarlo a mano en la lista de 50 estados).
+- **Totales por plataforma**: la pantalla de Resumen ahora desglosa cuántas millas y cuánta deducción corresponden a cada app (DoorDash, Uber, Amazon Flex, etc.) en el período elegido, no solo el total general.
+
 ### v2.3
 - **Registro de peajes**: al finalizar un viaje puedes anotar cuánto pagaste en peajes (opcional). El IRS permite deducir peajes y estacionamiento de negocio **por separado** de la deducción estándar por millaje — el Resumen fiscal ahora muestra la deducción combinada (millaje + peajes) y el desglose de cada una.
 - **Respaldo de datos**: en Ajustes puedes **Exportar** un archivo de respaldo (a Google Drive, Descargas, correo, etc.) e **Importar** ese archivo si reinstalas la app o cambias de celular, sin perder tu historial. Además, se activó el "Auto Backup" de Android como capa adicional automática.

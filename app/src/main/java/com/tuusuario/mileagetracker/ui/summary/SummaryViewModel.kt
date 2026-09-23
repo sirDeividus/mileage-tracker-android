@@ -19,6 +19,16 @@ import java.util.Date
 
 enum class Period { MONTH, QUARTER, YEAR }
 
+// NUEVO: totales de un período agrupados por plataforma de trabajo
+// (DoorDash, Uber, Amazon Flex, etc.), para responder "¿cuánto manejé
+// y cuánto puedo deducir por cada app?".
+data class PlatformTotal(
+    val platformId: String,
+    val miles: Double,
+    val deduction: Double,
+    val tripCount: Int,
+)
+
 data class SummaryUiState(
     val period: Period = Period.MONTH,
     val totalMiles: Double = 0.0,
@@ -27,6 +37,7 @@ data class SummaryUiState(
     val combinedDeduction: Double = 0.0,   // NUEVO v2.3: millaje + peajes
     val tripCount: Int = 0,
     val selectedState: UsState? = null, // NUEVO: reemplaza el "North Carolina" fijo
+    val platformBreakdown: List<PlatformTotal> = emptyList(), // NUEVO
 )
 
 /**
@@ -84,12 +95,27 @@ class SummaryViewModel(application: Application) : AndroidViewModel(application)
         // de la deducción por millaje, así que se suman al final.
         val totalTolls = filtered.sumOf { it.tollAmount }
 
+        // NUEVO: agrupa por plataforma para mostrar cuánto se manejó/dedujo
+        // en cada app (DoorDash, Uber, etc.), ordenado de mayor a menor millaje.
+        val platformBreakdown = filtered
+            .groupBy { it.platform.ifBlank { "" } }
+            .map { (platformId, trips) ->
+                PlatformTotal(
+                    platformId = platformId,
+                    miles = trips.sumOf { it.miles },
+                    deduction = trips.sumOf { calculateDeduction(it.miles, Date(it.startTimeMillis)).deduction },
+                    tripCount = trips.size,
+                )
+            }
+            .sortedByDescending { it.miles }
+
         _uiState.value = _uiState.value.copy(
             totalMiles = totalMiles,
             totalDeduction = totalDeduction,
             totalTolls = totalTolls,
             combinedDeduction = totalDeduction + totalTolls,
-            tripCount = filtered.size
+            tripCount = filtered.size,
+            platformBreakdown = platformBreakdown,
         )
     }
 

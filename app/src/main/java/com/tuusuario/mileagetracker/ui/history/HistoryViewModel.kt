@@ -41,4 +41,17 @@ class HistoryViewModel(application: Application) : AndroidViewModel(application)
             repository.deleteTrip(trip)
         }
     }
+
+    // NUEVO: guarda un viaje editado, o uno nuevo agregado manualmente
+    // (si trip.id == 0, Room lo trata como una fila nueva gracias a
+    // @PrimaryKey(autoGenerate = true), igual que insertTrip).
+    fun saveTrip(trip: TripEntity) {
+        viewModelScope.launch {
+            if (trip.id == 0L) {
+                repository.saveTrip(trip)
+            } else {
+                repository.updateTrip(trip)
+            }
+        }
+    }
 }

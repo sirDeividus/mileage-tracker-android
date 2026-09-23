@@ -29,6 +29,11 @@ class TripRepository(private val dao: TripDao) {
         dao.insertAll(trips)
     }
 
+    // NUEVO: usado por "Editar" y por "Agregar viaje manual" en el Historial.
+    suspend fun updateTrip(trip: TripEntity) {
+        dao.updateTrip(trip)
+    }
+
     suspend fun deleteTrip(trip: TripEntity) {
         dao.deleteTrip(trip)
     }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -38,6 +39,7 @@ import java.util.Locale
 fun TripCard(
     trip: TripEntity,
     onDelete: (TripEntity) -> Unit,
+    onEdit: (TripEntity) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalAppStrings.current
@@ -116,6 +118,9 @@ fun TripCard(
                 )
             }
 
+            IconButton(onClick = { onEdit(trip) }) {
+                Icon(Icons.Default.Edit, contentDescription = strings.edit, tint = colors.textSecondary)
+            }
             IconButton(onClick = { onDelete(trip) }) {
                 Icon(Icons.Default.Delete, contentDescription = strings.delete, tint = DangerRed)
             }

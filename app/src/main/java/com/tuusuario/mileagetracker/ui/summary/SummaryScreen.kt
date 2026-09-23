@@ -23,6 +23,7 @@ import com.tuusuario.mileagetracker.ui.theme.PrimaryGreen
 import com.tuusuario.mileagetracker.ui.theme.TextOnPrimary
 import com.tuusuario.mileagetracker.util.BUSINESS_MILEAGE_RATES
 import com.tuusuario.mileagetracker.util.LocalAppStrings
+import com.tuusuario.mileagetracker.util.findPlatformById
 import com.tuusuario.mileagetracker.util.stateTaxNotes
 
 /**
@@ -105,7 +106,54 @@ fun SummaryScreen() {
                 SmallStat("${uiState.tripCount}", strings.tripsLabel, Modifier.weight(1f))
             }
 
-            Spacer(modifier = Modifier.height(22.dp))
+            // NUEVO: desglose de millas y deducción por cada plataforma de
+            // trabajo (DoorDash, Uber, Amazon Flex, etc.) en el período elegido.
+            if (uiState.platformBreakdown.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(22.dp))
+                Text(strings.platformBreakdownTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
+                Spacer(modifier = Modifier.height(10.dp))
+
+                uiState.platformBreakdown.forEach { entry ->
+                    val platform = if (entry.platformId.isBlank()) null else findPlatformById(entry.platformId)
+                    val label = platform?.displayName ?: entry.platformId.ifBlank { strings.noPlatform }
+                    val dotColor = platform?.color ?: colors.textMuted
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(colors.surface, RoundedCornerShape(10.dp))
+                            .padding(vertical = 10.dp, horizontal = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .background(dotColor, RoundedCornerShape(5.dp))
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = colors.textPrimary)
+                                Text(
+                                    "${"%.1f".format(entry.miles)} mi · ${entry.tripCount} ${strings.tripsLabel.lowercase()}",
+                                    fontSize = 11.sp,
+                                    color = colors.textMuted
+                                )
+                            }
+                        }
+                        Text(
+                            "$${"%.2f".format(entry.deduction)}",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryGreen
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
             Text(strings.irsRatesUsed, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
             Spacer(modifier = Modifier.height(10.dp))
 

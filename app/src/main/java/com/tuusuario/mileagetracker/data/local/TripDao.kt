@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -29,6 +30,11 @@ interface TripDao {
     // importar un archivo de respaldo (ver BackupManager.kt).
     @Insert
     suspend fun insertAll(trips: List<TripEntity>)
+
+    // NUEVO: permite editar un viaje ya guardado (plataforma, millas,
+    // peajes, nota) — usado por "Editar" en el Historial.
+    @Update
+    suspend fun updateTrip(trip: TripEntity)
 
     @Delete
     suspend fun deleteTrip(trip: TripEntity)

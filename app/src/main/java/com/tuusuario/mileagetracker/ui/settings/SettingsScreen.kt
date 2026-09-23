@@ -1,5 +1,6 @@
 package com.tuusuario.mileagetracker.ui.settings
 
+import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -12,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +26,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tuusuario.mileagetracker.data.local.AppLanguage
 import com.tuusuario.mileagetracker.data.local.ThemeMode
 import com.tuusuario.mileagetracker.data.local.UserPreferences
+import com.tuusuario.mileagetracker.ui.theme.DangerRed
 import com.tuusuario.mileagetracker.ui.theme.LocalAppColors
 import com.tuusuario.mileagetracker.ui.theme.PrimaryGreen
 import com.tuusuario.mileagetracker.util.LocalAppStrings
@@ -55,6 +58,49 @@ fun SettingsScreen(
     var selectedStateCode by remember { mutableStateOf(prefs.stateCode) }
     var showStatePicker by remember { mutableStateOf(false) }
     var backupMessage by remember { mutableStateOf<String?>(null) }
+
+    // NUEVO: estado del botón "Detectar mi estado por GPS"
+    var isDetectingState by remember { mutableStateOf(false) }
+    var detectStateMessage by remember { mutableStateOf<String?>(null) }
+    var detectStateIsError by remember { mutableStateOf(false) }
+
+    fun runDetectState() {
+        isDetectingState = true
+        detectStateMessage = null
+        settingsViewModel.detectStateFromGps { result ->
+            isDetectingState = false
+            when (result) {
+                is DetectStateResult.Found -> {
+                    selectedStateCode = result.state.code
+                    detectStateIsError = false
+                    detectStateMessage = "${strings.detectStateFoundPrefix} ${result.state.displayName}"
+                }
+                is DetectStateResult.PermissionDenied -> {
+                    detectStateIsError = true
+                    detectStateMessage = strings.detectStatePermissionDenied
+                }
+                is DetectStateResult.NotFound -> {
+                    detectStateIsError = true
+                    detectStateMessage = strings.detectStateError
+                }
+            }
+        }
+    }
+
+    // Pide el permiso de ubicación de primer plano si aún no se concedió
+    // (por ejemplo, si el usuario nunca presionó "Start Work" en Inicio),
+    // y al resolverse intenta la detección.
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            runDetectState()
+        } else {
+            isDetectingState = false
+            detectStateIsError = true
+            detectStateMessage = strings.detectStatePermissionDenied
+        }
+    }
 
     // NUEVO v2.3: selector nativo de Android para ELEGIR DÓNDE guardar el
     // archivo de respaldo (Google Drive, Descargas, etc.). No necesitamos
@@ -134,6 +180,42 @@ fun SettingsScreen(
             ) {
                 Text(selectedStateName, fontSize = 14.sp, color = colors.textPrimary, fontWeight = FontWeight.Medium)
                 Text("›", fontSize = 18.sp, color = colors.textMuted)
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            OutlinedButton(
+                onClick = {
+                    val hasPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+                        context, Manifest.permission.ACCESS_FINE_LOCATION
+                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    isDetectingState = true
+                    detectStateMessage = null
+                    if (hasPermission) {
+                        runDetectState()
+                    } else {
+                        locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                    }
+                },
+                enabled = !isDetectingState,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(Icons.Default.MyLocation, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    if (isDetectingState) strings.detectStateDetecting else strings.detectStateButton,
+                    fontSize = 13.sp
+                )
+            }
+
+            detectStateMessage?.let {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    it,
+                    fontSize = 12.sp,
+                    color = if (detectStateIsError) DangerRed else PrimaryGreen,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
