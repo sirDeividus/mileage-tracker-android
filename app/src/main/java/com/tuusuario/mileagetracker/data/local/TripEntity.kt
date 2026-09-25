@@ -41,4 +41,11 @@ data class TripEntity(
 
     // NUEVO v2.3: monto pagado en peajes durante este viaje, en dólares.
     val tollAmount: Double = 0.0,
+
+    // NUEVO v2.4: true mientras el viaje se está rastreando (fila "borrador"
+    // que TrackingService va actualizando en vivo). Se pone en false cuando
+    // el viaje se cierra — con "Stop Work", al cambiar de día, o al
+    // recuperarlo si la app se cerró sin que el usuario lo detuviera. El
+    // Historial y el Resumen solo muestran viajes con isActive = false.
+    val isActive: Boolean = false,
 )

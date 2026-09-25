@@ -8,6 +8,11 @@ App **100% nativa de Android**, escrita en **Kotlin + Jetpack Compose**, que ras
 
 ## 🆕 Changelog
 
+### v2.5
+- **Autoguardado — para no perder millas si se te olvida cerrar el viaje**: apenas presionas "Start Work" ya se crea el registro en la base de datos, y se va actualizando solo cada ~20 segundos mientras manejas. Si la app se cierra a la fuerza, el teléfono se reinicia, o simplemente se te olvida presionar "Stop Work" por horas, las millas rastreadas hasta ese momento NO se pierden.
+- **División automática a medianoche**: si sigues rastreando cuando cambia el día (ej. turno nocturno), la app guarda automáticamente el viaje de "ayer" a las 12:00 a.m. y empieza uno nuevo para "hoy" — sin mezclar millas de dos días, y sin que tengas que hacer nada. Te llega una notificación avisando que pasó.
+- **Recuperación de viajes olvidados**: la próxima vez que abras la app después de haberte olvidado de presionar "Stop Work", se detecta automáticamente y se guarda como viaje terminado, con un aviso de cuántas millas se alcanzaron a rastrear.
+
 ### v2.4
 - **Editar viajes**: en Historial, además de eliminar, ahora puedes tocar el lápiz para corregir un viaje ya guardado (fecha, millas, plataforma, peajes, nota).
 - **Agregar viaje manual**: botón "+" en Historial para registrar un viaje a mano cuando se te olvida presionar "Start Work" — así no pierdes esa deducción.

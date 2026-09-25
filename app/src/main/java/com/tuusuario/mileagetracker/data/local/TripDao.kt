@@ -23,8 +23,11 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface TripDao {
 
+    // Devuelve el id autogenerado de la fila insertada — lo necesita
+    // TrackingService para saber qué fila seguir actualizando mientras
+    // el viaje está en curso (ver MIGRATION_3_4 / isActive en TripEntity).
     @Insert
-    suspend fun insertTrip(trip: TripEntity)
+    suspend fun insertTrip(trip: TripEntity): Long
 
     // NUEVO v2.3: inserta varios viajes de una sola vez — se usa al
     // importar un archivo de respaldo (ver BackupManager.kt).
@@ -32,15 +35,29 @@ interface TripDao {
     suspend fun insertAll(trips: List<TripEntity>)
 
     // NUEVO: permite editar un viaje ya guardado (plataforma, millas,
-    // peajes, nota) — usado por "Editar" en el Historial.
+    // peajes, nota) — usado por "Editar" en el Historial, y por
+    // TrackingService para ir guardando el viaje en curso.
     @Update
     suspend fun updateTrip(trip: TripEntity)
 
     @Delete
     suspend fun deleteTrip(trip: TripEntity)
 
-    @Query("SELECT * FROM trips ORDER BY startTimeMillis DESC")
+    // NUEVO v2.4: usado para descartar un "borrador" de viaje casi sin
+    // millas (ej. el usuario presionó Start y Stop casi al instante).
+    @Query("DELETE FROM trips WHERE id = :id")
+    suspend fun deleteTripById(id: Long)
+
+    // Solo viajes YA terminados (isActive = false) — el borrador en curso
+    // no debe aparecer en el Historial ni en el Resumen mientras se rastrea.
+    @Query("SELECT * FROM trips WHERE isActive = 0 ORDER BY startTimeMillis DESC")
     fun getAllTrips(): Flow<List<TripEntity>>
+
+    // NUEVO v2.4: detecta si quedó un viaje "a medias" de una sesión de
+    // rastreo anterior que nunca se cerró correctamente (la app se cerró,
+    // el teléfono se reinició, etc.) — ver HomeViewModel.recoverOrphanedTrip().
+    @Query("SELECT * FROM trips WHERE isActive = 1 LIMIT 1")
+    suspend fun getActiveTrip(): TripEntity?
 
     @Query("DELETE FROM trips")
     suspend fun clearAllTrips()

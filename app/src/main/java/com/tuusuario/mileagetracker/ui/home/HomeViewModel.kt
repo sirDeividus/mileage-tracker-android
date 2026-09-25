@@ -6,21 +6,21 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.tuusuario.mileagetracker.data.local.AppDatabase
 import com.tuusuario.mileagetracker.data.local.TripEntity
+import com.tuusuario.mileagetracker.data.local.UserPreferences
 import com.tuusuario.mileagetracker.data.repository.TripRepository
 import com.tuusuario.mileagetracker.location.TrackingService
 import com.tuusuario.mileagetracker.location.TrackingSessionState
 import com.tuusuario.mileagetracker.util.DeliveryPlatform
+import com.tuusuario.mileagetracker.util.MIN_TRACKABLE_MILES
 import com.tuusuario.mileagetracker.util.calculateDeduction
-import com.tuusuario.mileagetracker.util.calculateTotalDistance
-import com.tuusuario.mileagetracker.util.filterGpsNoise
+import com.tuusuario.mileagetracker.util.stringsFor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import org.json.JSONArray
-import org.json.JSONObject
+import java.util.Calendar
+import java.util.Date
 
 /**
  * HomeUiState.kt (dentro de HomeViewModel)
@@ -39,30 +39,37 @@ data class HomeUiState(
     val monthDeduction: Double = 0.0,
     val monthTolls: Double = 0.0,      // NUEVO v2.3
     val errorMessage: String? = null,
+    // NUEVO v2.4: millas de un viaje que quedó sin cerrar de una sesión
+    // anterior (se le olvidó presionar "Stop Work") y que se acaba de
+    // recuperar automáticamente. null = no hay nada que avisar.
+    val recoveredTripMiles: Double? = null,
 )
 
 /**
- * HomeViewModel.kt  (REESCRITO en v2.0)
+ * HomeViewModel.kt  (ACTUALIZADO v2.4)
  * -----------------------------------------------------------------------
  * CAMBIO CLAVE respecto a la v1.0: este ViewModel YA NO escucha el GPS
- * directamente. Antes lo hacía con locationTracker.trackLocation(),
- * pero eso se detenía cuando Android congelaba la app en segundo plano
- * (el bug reportado: "no me toma las millas cuando el cel está
- * inactivo").
+ * directamente ni escribe el viaje en la base de datos al presionar "Stop
+ * Work". Eso ahora lo hace TrackingService de principio a fin (ver
+ * TrackingService.kt): crea la fila del viaje apenas empieza, la va
+ * actualizando cada ~20s mientras rastrea (autoguardado), y la cierra al
+ * recibir ACTION_STOP — así ningún dato depende de que esta pantalla siga
+ * viva.
  *
- * Ahora el ViewModel solo:
+ * Este ViewModel solo:
  *   1. Le ordena a TrackingService que empiece/termine (con un Intent).
- *   2. OBSERVA el progreso a través de TrackingSessionState, que el
- *      Service actualiza desde segundo plano sin depender de que esta
- *      pantalla esté visible.
- *
- * El GPS real vive en el Service, que Android mantiene vivo gracias a
- * la notificación persistente (startForeground).
+ *   2. OBSERVA el progreso a través de TrackingSessionState.
+ *   3. Muestra los totales del mes de forma REACTIVA (Flow), para que se
+ *      actualicen solos apenas el Service termina de guardar — sin tener
+ *      que "recargar" manualmente.
+ *   4. Al abrir la app, revisa si quedó un viaje sin cerrar de una sesión
+ *      anterior (se le olvidó presionar "Stop Work") y lo recupera.
  * -----------------------------------------------------------------------
  */
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: TripRepository
+    private val strings = stringsFor(UserPreferences(application).language)
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -70,7 +77,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     init {
         val dao = AppDatabase.getInstance(application).tripDao()
         repository = TripRepository(dao)
-        loadMonthSummary()
+
+        // NUEVO v2.4: los totales del mes ahora se recalculan solos cada
+        // vez que cambia la tabla de viajes (autoguardado, edición,
+        // eliminación desde el Historial, etc.) — ya no hace falta pedirle
+        // explícitamente al ViewModel que "recargue".
+        viewModelScope.launch {
+            repository.allTrips.collect { trips -> applyMonthSummary(trips) }
+        }
 
         // Nos suscribimos al estado que publica el Service en segundo plano
         // y lo reflejamos en nuestro propio uiState para que la pantalla
@@ -84,6 +98,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     _uiState.value = _uiState.value.copy(isTracking = tracking, currentMiles = miles)
                 }
         }
+
+        recoverOrphanedTrip()
     }
 
     fun selectPlatform(platform: DeliveryPlatform) {
@@ -98,6 +114,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     /** NUEVO v2.3: actualiza el monto de peajes que el usuario va escribiendo. */
     fun updateTollAmount(text: String) {
+        // NUEVO v2.4: también se guarda en TrackingSessionState, que es lo
+        // que TrackingService lee para el autoguardado del viaje en curso.
+        TrackingSessionState.tollAmountText = text
         _uiState.value = _uiState.value.copy(tollAmountText = text)
     }
 
@@ -113,7 +132,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         context.startForegroundService(intent)
     }
 
-    /** Se llama cuando el usuario presiona "Stop Work". Guarda el viaje. */
+    /**
+     * Se llama cuando el usuario presiona "Stop Work". El guardado real lo
+     * hace TrackingService (ver ACTION_STOP) — aquí solo reflejamos el
+     * cambio de inmediato en la pantalla para que se sienta instantáneo.
+     */
     fun stopTracking(onSaved: (Double) -> Unit) {
         val context = getApplication<Application>()
         val stopIntent = Intent(context, TrackingService::class.java).apply {
@@ -121,73 +144,59 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
         context.startService(stopIntent)
 
-        val route = TrackingSessionState.routePoints.value
-        val cleanRoute = filterGpsNoise(route)
-        val miles = calculateTotalDistance(cleanRoute)
-        val startTime = TrackingSessionState.startTimeMillis
-        val platformId = TrackingSessionState.selectedPlatform
-        val customName = TrackingSessionState.customPlatformName
-
-        if (miles < 0.05) {
-            _uiState.value = _uiState.value.copy(
-                errorMessage = "No se detectó suficiente distancia recorrida. El viaje no fue guardado."
-            )
-            TrackingSessionState.reset()
-            return
-        }
-
-        viewModelScope.launch {
-            val platformValue = if (platformId == "other") customName.trim() else platformId
-            val tollAmount = _uiState.value.tollAmountText.toDoubleOrNull() ?: 0.0
-
-            val trip = TripEntity(
-                startTimeMillis = startTime,
-                endTimeMillis = System.currentTimeMillis(),
-                miles = miles,
-                note = "",
-                routeJson = routeToJson(cleanRoute),
-                platform = platformValue,
-                tollAmount = tollAmount,
-            )
-            repository.saveTrip(trip)
-            TrackingSessionState.reset()
-            _uiState.value = _uiState.value.copy(
-                selectedPlatformId = "",
-                customPlatformName = "",
-                tollAmountText = "",
-            )
-            loadMonthSummary()
+        val miles = TrackingSessionState.currentMiles.value
+        if (miles < MIN_TRACKABLE_MILES) {
+            _uiState.value = _uiState.value.copy(errorMessage = strings.tripTooShortError)
+        } else {
             onSaved(miles)
         }
+
+        _uiState.value = _uiState.value.copy(
+            isTracking = false,
+            currentMiles = 0.0,
+            selectedPlatformId = "",
+            customPlatformName = "",
+            tollAmountText = "",
+        )
     }
 
-    private fun loadMonthSummary() {
+    /** NUEVO v2.4: descarta el aviso de "viaje recuperado" una vez que el usuario lo vio. */
+    fun dismissRecoveredTripNotice() {
+        _uiState.value = _uiState.value.copy(recoveredTripMiles = null)
+    }
+
+    /**
+     * NUEVO v2.4: si la app se cerró (o el teléfono se reinició) mientras
+     * un viaje seguía rastreándose y nunca se presionó "Stop Work", queda
+     * una fila "borrador" (isActive = true) en la base de datos con las
+     * últimas millas que TrackingService alcanzó a guardar. La cerramos
+     * acá para que no se pierda ni quede fantasma para siempre.
+     */
+    private fun recoverOrphanedTrip() {
+        // Si TrackingSessionState.isTracking ya es true, es porque el
+        // Service SÍ sigue corriendo en este mismo proceso (la app solo se
+        // minimizó, no se cerró) — ahí no hay nada que recuperar.
+        if (TrackingSessionState.isTracking.value) return
+
         viewModelScope.launch {
-            val trips = repository.allTrips.first()
-            val now = java.util.Calendar.getInstance()
-            val thisMonthTrips = trips.filter { trip ->
-                val cal = java.util.Calendar.getInstance().apply { timeInMillis = trip.startTimeMillis }
-                cal.get(java.util.Calendar.MONTH) == now.get(java.util.Calendar.MONTH) &&
-                    cal.get(java.util.Calendar.YEAR) == now.get(java.util.Calendar.YEAR)
-            }
-            val totalMiles = thisMonthTrips.sumOf { it.miles }
-            val totalDeduction = thisMonthTrips.sumOf {
-                calculateDeduction(it.miles, java.util.Date(it.startTimeMillis)).deduction
-            }
-            val totalTolls = thisMonthTrips.sumOf { it.tollAmount }
-            _uiState.value = _uiState.value.copy(monthMiles = totalMiles, monthDeduction = totalDeduction, monthTolls = totalTolls)
+            val orphan = repository.getActiveTrip() ?: return@launch
+            repository.updateTrip(orphan.copy(isActive = false))
+            _uiState.value = _uiState.value.copy(recoveredTripMiles = orphan.miles)
         }
     }
 
-    private fun routeToJson(route: List<com.tuusuario.mileagetracker.util.GpsPoint>): String {
-        val array = JSONArray()
-        route.forEach { point ->
-            val obj = JSONObject()
-            obj.put("lat", point.latitude)
-            obj.put("lng", point.longitude)
-            obj.put("t", point.timestampMillis)
-            array.put(obj)
+    private fun applyMonthSummary(trips: List<TripEntity>) {
+        val now = Calendar.getInstance()
+        val thisMonthTrips = trips.filter { trip ->
+            val cal = Calendar.getInstance().apply { timeInMillis = trip.startTimeMillis }
+            cal.get(Calendar.MONTH) == now.get(Calendar.MONTH) &&
+                cal.get(Calendar.YEAR) == now.get(Calendar.YEAR)
         }
-        return array.toString()
+        val totalMiles = thisMonthTrips.sumOf { it.miles }
+        val totalDeduction = thisMonthTrips.sumOf {
+            calculateDeduction(it.miles, Date(it.startTimeMillis)).deduction
+        }
+        val totalTolls = thisMonthTrips.sumOf { it.tollAmount }
+        _uiState.value = _uiState.value.copy(monthMiles = totalMiles, monthDeduction = totalDeduction, monthTolls = totalTolls)
     }
 }

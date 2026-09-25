@@ -48,7 +48,19 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
     }
 }
 
-@Database(entities = [TripEntity::class], version = 3, exportSchema = false)
+// NUEVO v2.4: agrega "isActive", que marca si un viaje sigue en curso
+// (borrador que TrackingService actualiza mientras el usuario maneja) o ya
+// terminó. Los viajes ya guardados antes de esta versión quedan en 0
+// (terminados), que es justo lo que deben ser.
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "ALTER TABLE trips ADD COLUMN isActive INTEGER NOT NULL DEFAULT 0"
+        )
+    }
+}
+
+@Database(entities = [TripEntity::class], version = 4, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun tripDao(): TripDao
@@ -65,10 +77,9 @@ abstract class AppDatabase : RoomDatabase() {
                     "mileage_tracker_db"
                 )
                     // Registramos TODAS las migraciones conocidas, en orden.
-                    // Así un usuario que viene desde muy atrás (v1 -> v3)
-                    // pasa automáticamente por MIGRATION_1_2 y luego
-                    // MIGRATION_2_3, sin perder ni un viaje.
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    // Así un usuario que viene desde muy atrás (v1 -> v4)
+                    // pasa automáticamente por las tres, sin perder ni un viaje.
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .build()
                 INSTANCE = instance
                 instance

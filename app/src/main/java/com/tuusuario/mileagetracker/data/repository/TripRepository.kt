@@ -20,9 +20,14 @@ class TripRepository(private val dao: TripDao) {
 
     val allTrips: Flow<List<TripEntity>> = dao.getAllTrips()
 
-    suspend fun saveTrip(trip: TripEntity) {
-        dao.insertTrip(trip)
-    }
+    // Devuelve el id generado — TrackingService lo necesita para saber a
+    // qué fila seguir escribiendo mientras el viaje está en curso.
+    suspend fun saveTrip(trip: TripEntity): Long = dao.insertTrip(trip)
+
+    // NUEVO v2.4: busca un viaje que quedó "en curso" (isActive = true) de
+    // una sesión de rastreo anterior que nunca se cerró — ver
+    // HomeViewModel.recoverOrphanedTrip().
+    suspend fun getActiveTrip(): TripEntity? = dao.getActiveTrip()
 
     // NUEVO v2.3: usado por la función de "Importar respaldo".
     suspend fun saveAll(trips: List<TripEntity>) {

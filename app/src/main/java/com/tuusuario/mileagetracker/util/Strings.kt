@@ -44,6 +44,10 @@ data class AppStrings(
     val tipBody: String,
     val tipDontShowAgain: String,
     val tipGotIt: String,
+    val tripTooShortError: String,
+    val daySplitNotificationTitle: String,
+    val daySplitNotificationBody: String,
+    val recoveredTripMessage: String,
 
     // Historial
     val historyTitle: String,
@@ -157,6 +161,10 @@ private val SPANISH = AppStrings(
         "que no son de trabajo.",
     tipDontShowAgain = "No mostrar de nuevo hoy",
     tipGotIt = "Entendido",
+    tripTooShortError = "No se detectó suficiente distancia recorrida. El viaje no fue guardado.",
+    daySplitNotificationTitle = "Nuevo día — viaje guardado automáticamente",
+    daySplitNotificationBody = "Cruzaste la medianoche mientras rastreabas. Guardamos las millas de ayer y empezamos un viaje nuevo para hoy, sin que tengas que hacer nada.",
+    recoveredTripMessage = "Detectamos un viaje que quedó sin cerrar (se te olvidó presionar \"Stop Work\") y guardamos automáticamente las millas que alcanzamos a rastrear.",
 
     historyTitle = "Historial de viajes",
     tripsRegistered = "viaje(s) registrados",
@@ -254,6 +262,10 @@ private val ENGLISH = AppStrings(
         "miles that aren't work-related.",
     tipDontShowAgain = "Don't show again today",
     tipGotIt = "Got it",
+    tripTooShortError = "Not enough distance was detected. The trip was not saved.",
+    daySplitNotificationTitle = "New day — trip saved automatically",
+    daySplitNotificationBody = "You crossed midnight while tracking. We saved yesterday's miles and started a new trip for today — no action needed.",
+    recoveredTripMessage = "We found a trip that was never closed (you forgot to press \"Stop Work\") and automatically saved the miles we managed to track.",
 
     historyTitle = "Trip history",
     tripsRegistered = "trip(s) recorded",

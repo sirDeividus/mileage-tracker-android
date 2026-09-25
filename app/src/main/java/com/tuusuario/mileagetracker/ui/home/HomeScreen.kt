@@ -131,6 +131,22 @@ fun HomeScreen() {
         }
     }
 
+    // NUEVO v2.4: si se recuperó un viaje que quedó sin cerrar (se le
+    // olvidó presionar "Stop Work" en una sesión anterior), avisamos con
+    // cuántas millas se alcanzaron a guardar automáticamente.
+    uiState.recoveredTripMiles?.let { recoveredMiles ->
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissRecoveredTripNotice() },
+            title = { Text("${"%.2f".format(recoveredMiles)} mi") },
+            text = { Text(strings.recoveredTripMessage) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.dismissRecoveredTripNotice() }) {
+                    Text(strings.tipGotIt, color = PrimaryGreen, fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+
     // NUEVO: modal de recordatorio diario, se muestra antes que cualquier otro diálogo
     if (showDailyTip) {
         TipDialog(

@@ -17,6 +17,14 @@ import kotlin.math.sqrt
 
 private const val EARTH_RADIUS_MILES = 3958.8
 
+/**
+ * Umbral mínimo de millas para considerar que un viaje es real y no ruido
+ * de GPS (ej. el usuario presionó "Start Work" y "Stop Work" casi al
+ * instante, sin moverse). Se usa tanto al finalizar un viaje manualmente
+ * como al autoguardarlo (ver TrackingService.kt).
+ */
+const val MIN_TRACKABLE_MILES = 0.05
+
 /** Un punto GPS simple: latitud, longitud y momento en que se registró. */
 data class GpsPoint(val latitude: Double, val longitude: Double, val timestampMillis: Long)
 

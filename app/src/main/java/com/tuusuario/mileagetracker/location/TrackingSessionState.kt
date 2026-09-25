@@ -39,6 +39,11 @@ object TrackingSessionState {
     var selectedPlatform: String = ""
     var customPlatformName: String = ""
 
+    // NUEVO v2.4: el Service necesita leer los peajes elegidos por el
+    // usuario para guardar el "borrador" del viaje en curso (autoguardado),
+    // igual que ya hacía con selectedPlatform/customPlatformName.
+    var tollAmountText: String = ""
+
     fun begin() {
         _routePoints.value = emptyList()
         _currentMiles.value = 0.0
@@ -58,5 +63,6 @@ object TrackingSessionState {
         _currentMiles.value = 0.0
         selectedPlatform = ""
         customPlatformName = ""
+        tollAmountText = ""
     }
 }
