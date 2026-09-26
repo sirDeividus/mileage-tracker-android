@@ -48,6 +48,9 @@ data class AppStrings(
     val daySplitNotificationTitle: String,
     val daySplitNotificationBody: String,
     val recoveredTripMessage: String,
+    val tollDetectedTitle: String,
+    val tollDetectedBody: String,
+    val tollDetectedIgnore: String,
 
     // Historial
     val historyTitle: String,
@@ -165,6 +168,9 @@ private val SPANISH = AppStrings(
     daySplitNotificationTitle = "Nuevo día — viaje guardado automáticamente",
     daySplitNotificationBody = "Cruzaste la medianoche mientras rastreabas. Guardamos las millas de ayer y empezamos un viaje nuevo para hoy, sin que tengas que hacer nada.",
     recoveredTripMessage = "Detectamos un viaje que quedó sin cerrar (se te olvidó presionar \"Stop Work\") y guardamos automáticamente las millas que alcanzamos a rastrear.",
+    tollDetectedTitle = "¿Pagaste peaje?",
+    tollDetectedBody = "Detectamos que tu ruta pasó cerca de una caseta de peaje conocida. No sabemos el monto exacto (varía según tu vehículo, hora y descuentos) — si pagaste, anótalo aquí para no perder esa deducción.",
+    tollDetectedIgnore = "No pagué",
 
     historyTitle = "Historial de viajes",
     tripsRegistered = "viaje(s) registrados",
@@ -266,6 +272,9 @@ private val ENGLISH = AppStrings(
     daySplitNotificationTitle = "New day — trip saved automatically",
     daySplitNotificationBody = "You crossed midnight while tracking. We saved yesterday's miles and started a new trip for today — no action needed.",
     recoveredTripMessage = "We found a trip that was never closed (you forgot to press \"Stop Work\") and automatically saved the miles we managed to track.",
+    tollDetectedTitle = "Did you pay a toll?",
+    tollDetectedBody = "We detected your route passed near a known toll booth. We don't know the exact amount (it varies by vehicle, time, and discounts) — if you paid, enter it here so you don't lose that deduction.",
+    tollDetectedIgnore = "I didn't pay",
 
     historyTitle = "Trip history",
     tripsRegistered = "trip(s) recorded",

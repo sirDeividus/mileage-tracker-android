@@ -44,6 +44,13 @@ object TrackingSessionState {
     // igual que ya hacía con selectedPlatform/customPlatformName.
     var tollAmountText: String = ""
 
+    // NUEVO v2.5: id de la fila del viaje en curso en la base de datos.
+    // HomeViewModel lo lee al presionar "Stop Work" para poder actualizar
+    // el mismo viaje más tarde con el peaje detectado por GPS (ver
+    // TollDetector.kt), sin tener que esperar a que el Service termine de
+    // cerrarlo primero.
+    var activeTripId: Long = 0
+
     fun begin() {
         _routePoints.value = emptyList()
         _currentMiles.value = 0.0
@@ -64,5 +71,6 @@ object TrackingSessionState {
         selectedPlatform = ""
         customPlatformName = ""
         tollAmountText = ""
+        activeTripId = 0
     }
 }

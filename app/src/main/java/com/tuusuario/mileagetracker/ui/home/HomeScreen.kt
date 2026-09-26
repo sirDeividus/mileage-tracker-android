@@ -30,6 +30,7 @@ import com.tuusuario.mileagetracker.ui.components.PlatformSelector
 import com.tuusuario.mileagetracker.ui.components.PrimaryButton
 import com.tuusuario.mileagetracker.ui.components.StatsCard
 import com.tuusuario.mileagetracker.ui.components.TipDialog
+import com.tuusuario.mileagetracker.ui.components.TollDetectedDialog
 import com.tuusuario.mileagetracker.ui.theme.*
 import com.tuusuario.mileagetracker.util.LocalAppStrings
 
@@ -129,6 +130,18 @@ fun HomeScreen() {
                 Toast.LENGTH_LONG
             ).show()
         }
+    }
+
+    // NUEVO v2.5: si al terminar el viaje detectamos que la ruta pasó por
+    // una caseta de peaje conocida, le pedimos al usuario que confirme
+    // cuánto pagó (no lo inventamos — ver TollDetector.kt).
+    uiState.tollDetection?.let { detection ->
+        TollDetectedDialog(
+            strings = strings,
+            detection = detection,
+            onConfirm = { amount -> viewModel.confirmDetectedToll(amount) },
+            onDismiss = { viewModel.dismissDetectedToll() },
+        )
     }
 
     // NUEVO v2.4: si se recuperó un viaje que quedó sin cerrar (se le

@@ -59,6 +59,12 @@ interface TripDao {
     @Query("SELECT * FROM trips WHERE isActive = 1 LIMIT 1")
     suspend fun getActiveTrip(): TripEntity?
 
+    // NUEVO v2.5: suma el peaje detectado por GPS al que ya tuviera el
+    // viaje (en vez de sobrescribirlo), por si el usuario ya había
+    // anotado algo a mano mientras manejaba — ver TollDetector.kt.
+    @Query("UPDATE trips SET tollAmount = tollAmount + :amount WHERE id = :id")
+    suspend fun addToll(id: Long, amount: Double)
+
     @Query("DELETE FROM trips")
     suspend fun clearAllTrips()
 }

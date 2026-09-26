@@ -43,6 +43,12 @@ class TripRepository(private val dao: TripDao) {
         dao.deleteTrip(trip)
     }
 
+    // NUEVO v2.5: agrega el peaje que el usuario confirmó tras la
+    // detección automática por GPS — ver TollDetector.kt.
+    suspend fun addTollToTrip(tripId: Long, amount: Double) {
+        dao.addToll(tripId, amount)
+    }
+
     suspend fun clearAll() {
         dao.clearAllTrips()
     }

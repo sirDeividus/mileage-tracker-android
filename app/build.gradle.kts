@@ -19,8 +19,8 @@ android {
         applicationId = "com.tuusuario.mileagetracker"
         minSdk = 26          // Android 8.0 en adelante (cubre +95% de dispositivos activos)
         targetSdk = 34
-        versionCode = 6
-        versionName = "2.5"
+        versionCode = 7
+        versionName = "2.6"
     }
 
     buildTypes {

@@ -8,6 +8,9 @@ App **100% nativa de Android**, escrita en **Kotlin + Jetpack Compose**, que ras
 
 ## 🆕 Changelog
 
+### v2.6
+- **Detección automática de peajes por GPS**: al terminar un viaje, la app consulta OpenStreetMap (gratis, sin API key) para ver si tu ruta pasó cerca de una caseta de peaje conocida. Si la detecta, te lo avisa con un diálogo para que confirmes cuánto pagaste — así no se te olvida anotarlo mientras manejas. **Importante**: no inventamos el monto exacto (varía según vehículo, hora y descuentos como E-ZPass/SunPass, y ningún servicio gratuito lo sabe con certeza) — solo detecta que probablemente cruzaste un peaje y te pide confirmar el número real. Requiere internet en el momento de terminar el viaje; si no hay señal, simplemente no detecta esa vez, pero el viaje se guarda igual.
+
 ### v2.5
 - **Autoguardado — para no perder millas si se te olvida cerrar el viaje**: apenas presionas "Start Work" ya se crea el registro en la base de datos, y se va actualizando solo cada ~20 segundos mientras manejas. Si la app se cierra a la fuerza, el teléfono se reinicia, o simplemente se te olvida presionar "Stop Work" por horas, las millas rastreadas hasta ese momento NO se pierden.
 - **División automática a medianoche**: si sigues rastreando cuando cambia el día (ej. turno nocturno), la app guarda automáticamente el viaje de "ayer" a las 12:00 a.m. y empieza uno nuevo para "hoy" — sin mezclar millas de dos días, y sin que tengas que hacer nada. Te llega una notificación avisando que pasó.

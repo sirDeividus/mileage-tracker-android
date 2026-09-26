@@ -11,8 +11,11 @@ import com.tuusuario.mileagetracker.data.repository.TripRepository
 import com.tuusuario.mileagetracker.location.TrackingService
 import com.tuusuario.mileagetracker.location.TrackingSessionState
 import com.tuusuario.mileagetracker.util.DeliveryPlatform
+import com.tuusuario.mileagetracker.util.GpsPoint
 import com.tuusuario.mileagetracker.util.MIN_TRACKABLE_MILES
+import com.tuusuario.mileagetracker.util.TollDetectionResult
 import com.tuusuario.mileagetracker.util.calculateDeduction
+import com.tuusuario.mileagetracker.util.detectTollAlongRoute
 import com.tuusuario.mileagetracker.util.stringsFor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,6 +46,10 @@ data class HomeUiState(
     // anterior (se le olvidó presionar "Stop Work") y que se acaba de
     // recuperar automáticamente. null = no hay nada que avisar.
     val recoveredTripMiles: Double? = null,
+    // NUEVO v2.5: se llena cuando TollDetector.kt encuentra que la ruta
+    // del viaje que acabas de terminar pasó cerca de una caseta de peaje
+    // conocida — dispara el diálogo para que confirmes el monto.
+    val tollDetection: TollDetectionResult? = null,
 )
 
 /**
@@ -70,6 +77,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: TripRepository
     private val strings = stringsFor(UserPreferences(application).language)
+
+    // NUEVO v2.5: id del viaje que está esperando que el usuario confirme
+    // (o descarte) el peaje detectado por GPS — no hace falta exponerlo en
+    // uiState, es plomería interna entre stopTracking() y confirmDetectedToll().
+    private var pendingTollTripId: Long = 0
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -138,6 +150,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
      * cambio de inmediato en la pantalla para que se sienta instantáneo.
      */
     fun stopTracking(onSaved: (Double) -> Unit) {
+        // NUEVO v2.5: capturamos la ruta y el id del viaje ANTES de mandar
+        // ACTION_STOP — el Service va a resetear TrackingSessionState de
+        // forma asíncrona apenas termine de cerrar el viaje, así que hay
+        // que leer estos valores ahora mismo.
+        val route = TrackingSessionState.routePoints.value
+        val tripId = TrackingSessionState.activeTripId
+
         val context = getApplication<Application>()
         val stopIntent = Intent(context, TrackingService::class.java).apply {
             action = TrackingService.ACTION_STOP
@@ -149,6 +168,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             _uiState.value = _uiState.value.copy(errorMessage = strings.tripTooShortError)
         } else {
             onSaved(miles)
+            checkForTollAlongRoute(route, tripId)
         }
 
         _uiState.value = _uiState.value.copy(
@@ -158,6 +178,37 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             customPlatformName = "",
             tollAmountText = "",
         )
+    }
+
+    /**
+     * NUEVO v2.5: consulta OpenStreetMap (mejor esfuerzo, no bloquea nada)
+     * para ver si el viaje que se acaba de guardar pasó por una caseta de
+     * peaje conocida. Si detecta algo, dispara el diálogo de confirmación
+     * — ver TollDetectedDialog.kt.
+     */
+    private fun checkForTollAlongRoute(route: List<GpsPoint>, tripId: Long) {
+        if (tripId == 0L) return
+        viewModelScope.launch {
+            val result = detectTollAlongRoute(route) ?: return@launch
+            pendingTollTripId = tripId
+            _uiState.value = _uiState.value.copy(tollDetection = result)
+        }
+    }
+
+    /** NUEVO v2.5: el usuario confirmó cuánto pagó en el peaje detectado. */
+    fun confirmDetectedToll(amount: Double) {
+        val tripId = pendingTollTripId
+        _uiState.value = _uiState.value.copy(tollDetection = null)
+        if (tripId == 0L) return
+        viewModelScope.launch {
+            repository.addTollToTrip(tripId, amount)
+        }
+    }
+
+    /** NUEVO v2.5: el usuario dijo que no pagó nada (o cerró el diálogo). */
+    fun dismissDetectedToll() {
+        pendingTollTripId = 0
+        _uiState.value = _uiState.value.copy(tollDetection = null)
     }
 
     /** NUEVO v2.4: descarta el aviso de "viaje recuperado" una vez que el usuario lo vio. */

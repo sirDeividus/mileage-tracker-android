@@ -113,6 +113,7 @@ class TrackingService : Service() {
             // Se crea la fila "borrador" ANTES de escuchar el GPS, para que
             // exista en la base de datos desde el primer segundo del viaje.
             activeTripId = tripDao.insertTrip(buildDraftEntity())
+            TrackingSessionState.activeTripId = activeTripId
             activeTripDayKey = dayKeyFor(System.currentTimeMillis())
             lastDraftSaveMillis = System.currentTimeMillis()
 
@@ -188,6 +189,7 @@ class TrackingService : Service() {
         routePoints.clear()
         TrackingSessionState.begin()
         activeTripId = tripDao.insertTrip(buildDraftEntity())
+        TrackingSessionState.activeTripId = activeTripId
         activeTripDayKey = dayKeyFor(System.currentTimeMillis())
         lastDraftSaveMillis = System.currentTimeMillis()
 
