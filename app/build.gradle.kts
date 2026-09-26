@@ -23,6 +23,27 @@ android {
         versionName = "2.6"
     }
 
+    // NUEVO — corrige "no se puede actualizar / app not installed":
+    // sin esto, Android Studio firma cada build de depuración con un
+    // keystore que genera automáticamente en TU máquina
+    // (~/.android/debug.keystore), distinto en cada computadora o cada vez
+    // que se reinstala Android Studio. Android exige que la firma sea
+    // IDÉNTICA para instalar una versión nueva encima de la anterior — si
+    // cambia, se rompe la actualización y solo queda desinstalar (perdiendo
+    // los datos, salvo que hagas un respaldo antes). Al fijar aquí el mismo
+    // keystore (que SÍ está incluido en el repositorio, ver .gitignore),
+    // cualquier compilación de este proyecto, desde cualquier máquina,
+    // queda firmada exactamente igual — las actualizaciones futuras nunca
+    // más deberían fallar por esto.
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("keystore/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false

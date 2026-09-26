@@ -14,3 +14,9 @@ app/release/
 *.aab
 *.keystore
 *.jks
+# EXCEPCIÓN: el keystore de depuración SÍ se sube a propósito (ver
+# app/keystore/debug.keystore + app/build.gradle.kts). No es secreto — es
+# la única forma de que compilar desde cualquier máquina/Android Studio
+# produzca SIEMPRE la misma firma, para poder instalar una versión nueva
+# ENCIMA de la anterior sin perder los datos ni tener que desinstalar.
+!app/keystore/debug.keystore

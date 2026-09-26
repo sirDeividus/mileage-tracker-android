@@ -6,10 +6,29 @@ App **100% nativa de Android**, escrita en **Kotlin + Jetpack Compose**, que ras
 
 ---
 
+## 🔧 "No se puede actualizar" / "App not installed" al instalar una versión nueva
+
+Si Android se niega a instalar el APK nuevo encima del que ya tenías (en vez de simplemente actualizarlo), es casi siempre porque la **firma digital** (keystore) no coincide — Android exige la firma IDÉNTICA para actualizar una app, si no, la rechaza por seguridad. Esto pasaba porque el proyecto no traía un keystore de depuración fijo: cada máquina/instalación de Android Studio generaba uno distinto por su cuenta.
+
+**Ya está corregido** (ver `app/keystore/debug.keystore` + `app/build.gradle.kts`): a partir de ahora, compilar este proyecto desde cualquier computadora produce siempre la misma firma, así que las próximas actualizaciones sí van a funcionar sin problema.
+
+Pero como el keystore de tu instalación ANTERIOR era distinto (no hay forma de recuperarlo ni evitarlo), necesitas hacer esta transición **una sola vez** para no perder tus viajes:
+
+1. Abre la app VIEJA que ya tienes instalada → pestaña **Ajustes** → **"Exportar respaldo (guardar archivo)"** → guarda el archivo donde lo vayas a encontrar después (Google Drive, Descargas, o mándatelo por correo).
+2. Trae los cambios más nuevos del proyecto (`git pull`) y vuelve a compilar el APK en Android Studio.
+3. **Desinstala** la app vieja de tu celular (esta vez sí hace falta, una única vez).
+4. Instala el APK nuevo.
+5. Abre la app → **Ajustes** → **"Importar respaldo (restaurar archivo)"** → elige el archivo del paso 1. Tus viajes vuelven a aparecer en el Historial.
+
+De aquí en adelante, cualquier actualización futura debería instalarse encima de la anterior sin pedirte desinstalar ni perder nada.
+
+---
+
 ## 🆕 Changelog
 
 ### v2.6
 - **Detección automática de peajes por GPS**: al terminar un viaje, la app consulta OpenStreetMap (gratis, sin API key) para ver si tu ruta pasó cerca de una caseta de peaje conocida. Si la detecta, te lo avisa con un diálogo para que confirmes cuánto pagaste — así no se te olvida anotarlo mientras manejas. **Importante**: no inventamos el monto exacto (varía según vehículo, hora y descuentos como E-ZPass/SunPass, y ningún servicio gratuito lo sabe con certeza) — solo detecta que probablemente cruzaste un peaje y te pide confirmar el número real. Requiere internet en el momento de terminar el viaje; si no hay señal, simplemente no detecta esa vez, pero el viaje se guarda igual.
+- **Corregido**: "no se puede actualizar" / "app not installed" al instalar una versión nueva encima de la anterior — el proyecto ahora incluye un keystore de depuración fijo (ver sección arriba), así que la firma ya no cambia entre compilaciones. Si vienes de una versión anterior, sigue los pasos de arriba una sola vez.
 
 ### v2.5
 - **Autoguardado — para no perder millas si se te olvida cerrar el viaje**: apenas presionas "Start Work" ya se crea el registro en la base de datos, y se va actualizando solo cada ~20 segundos mientras manejas. Si la app se cierra a la fuerza, el teléfono se reinicia, o simplemente se te olvida presionar "Stop Work" por horas, las millas rastreadas hasta ese momento NO se pierden.
